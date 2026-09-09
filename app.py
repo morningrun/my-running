@@ -27,7 +27,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# 2. 화면 스타일 CSS
+# 2. 화면 스타일 CSS (Streamlit 기본 하단 메뉴/로고 숨김 처리 추가)
 st.markdown("""
     <style>
     @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -37,6 +37,12 @@ st.markdown("""
     }
 
     header {visibility: hidden;}
+    
+    /* Streamlit 하단 메뉴, 배지, 앱 메뉴 버튼 숨기기 */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    .stDeployButton {display: none;}
+    [data-testid="stStatusWidget"] {visibility: hidden;}
     
     .stApp {
         background-color: #F8FAFC;
@@ -275,7 +281,7 @@ if not df.empty:
 
     st.write("")
 
-    # 3. 서브 카드 출력 (라벨 변경 적용)
+    # 3. 서브 카드 출력
     sub_cards_html = """
     <div class="grid-container">
         <div class="sub-card">
@@ -315,7 +321,7 @@ if not df.empty:
     )
     st.markdown(sub_cards_html, unsafe_allow_html=True)
 
-    # 4. 차트 (라벨 변경 및 소수점 둘째 자리 표시)
+    # 4. 차트
     st.markdown("<p style='font-size:0.82rem; font-weight:800; color:#334155; margin-bottom:6px;'>📊 일별 운동 거리 (km)</p>", unsafe_allow_html=True)
     
     daily_df = df.groupby("Date", as_index=False)["Distance"].sum()
