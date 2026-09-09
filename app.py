@@ -275,20 +275,20 @@ if not df.empty:
 
     st.write("")
 
-    # 3. 서브 카드 출력 (소수점 둘째 자리 적용)
+    # 3. 서브 카드 출력 (라벨 변경 적용)
     sub_cards_html = """
     <div class="grid-container">
         <div class="sub-card">
             <div class="sub-card-header">
                 <span class="sub-icon">🎯</span>
-                <span class="sub-label">부족분</span>
+                <span class="sub-label">남은 거리</span>
             </div>
             <div class="sub-value sub-accent">{rem_km:.2f} km</div>
         </div>
         <div class="sub-card">
             <div class="sub-card-header">
                 <span class="sub-icon">⚡</span>
-                <span class="sub-label">하루 필요</span>
+                <span class="sub-label">평균 하루 운동 거리</span>
             </div>
             <div class="sub-value">{daily_km:.2f} km</div>
         </div>
@@ -302,7 +302,7 @@ if not df.empty:
         <div class="sub-card">
             <div class="sub-card-header">
                 <span class="sub-icon">📈</span>
-                <span class="sub-label">월 예상</span>
+                <span class="sub-label">월 예상 거리</span>
             </div>
             <div class="sub-value">{exp_km:.2f} km</div>
         </div>
@@ -315,8 +315,8 @@ if not df.empty:
     )
     st.markdown(sub_cards_html, unsafe_allow_html=True)
 
-    # 4. 차트 (소수점 둘째 자리 표시)
-    st.markdown("<p style='font-size:0.82rem; font-weight:800; color:#334155; margin-bottom:6px;'>📊 일별 참고 기록 (km)</p>", unsafe_allow_html=True)
+    # 4. 차트 (라벨 변경 및 소수점 둘째 자리 표시)
+    st.markdown("<p style='font-size:0.82rem; font-weight:800; color:#334155; margin-bottom:6px;'>📊 일별 운동 거리 (km)</p>", unsafe_allow_html=True)
     
     daily_df = df.groupby("Date", as_index=False)["Distance"].sum()
 
