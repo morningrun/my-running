@@ -199,7 +199,7 @@ if not df.empty:
     daily_required_km = round(remaining_km / remaining_days, 1) if remaining_km > 0 else 0.0
     expected_total_km = round((total_km / current_day) * days_in_month, 1)
 
-    # 이미지 base64 변환 함수 (HTML 내부에 안정적으로 임베드하기 위함)
+    # 이미지 base64 변환 함수
     def get_image_base64(path):
         if os.path.exists(path):
             with open(path, "rb") as f:
@@ -209,12 +209,13 @@ if not df.empty:
 
     img_base64 = get_image_base64("mascot.png")
     
+    # 동그랗고 파란 테두리 적용 (border-radius: 50%, border: 2px solid #38BDF8)
     if img_base64:
-        mascot_html = f'<img src="data:image/png;base64,{img_base64}" style="width: 55px; height: auto; border-radius: 10px;">'
+        mascot_html = f'<img src="data:image/png;base64,{img_base64}" style="width: 52px; height: 52px; border-radius: 50%; border: 2px solid #38BDF8; object-fit: cover;">'
     else:
         mascot_html = '<span style="font-size: 2rem;">🏃💨</span>'
 
-    # 1. 메인 히어로 카드 출력 (HTML 단일 블록으로 폰트 깨짐 및 가시성 문제 원천 차단)
+    # 1. 메인 히어로 카드 출력
     hero_html = """
         <div class="hero-card">
             <div class="hero-top-flex">
