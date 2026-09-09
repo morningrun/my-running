@@ -1,11 +1,11 @@
-import streamlit as st
-import requests
-import pandas as pd
-import plotly.express as px
-from datetime import datetime
-import calendar
-import os
 import base64
+import calendar
+from datetime import datetime
+import os
+import plotly.express as px
+import pandas as pd
+import requests
+import streamlit as st
 
 # 이미지 base64 변환 함수 (마스코트 공용)
 def get_image_base64(path):
@@ -193,21 +193,27 @@ if activities:
 
 df = pd.DataFrame(running_records)
 
-# 날짜 및 목표 계산
+# 실시간 시스템 시간 및 요일 연동 계산
 now = datetime.now()
-days_in_month = calendar.monthrange(now.year, now.month)[1]
+year = now.strftime("%Y")
+month_num = now.strftime("%m")
 current_day = now.day
+week_days = ['일', '월', '화', '수', '목', '금', '토']
+current_weekday = week_days[now.weekday()]
+date_text = f"{year}.{month_num}.{current_day:02d} ({current_weekday})"
+
+days_in_month = calendar.monthrange(now.year, now.month)[1]
 remaining_days = max(1, days_in_month - current_day + 1)
 
 GOAL_KM = 200.0
 
-# 상단 헤더 출력
+# 상단 헤더 출력 (실시간 연동된 날짜/요일 적용)
 header_html = """
     <div class="crew-header">
-        <div class="crew-title">이실권 200CREW</div>
+        <div class="crew-title">200CREW</div>
         <div class="crew-subtitle">📅 {date_str}</div>
     </div>
-""".format(date_str=now.strftime("%Y.%m"))
+""".format(date_str=date_text)
 st.markdown(header_html, unsafe_allow_html=True)
 
 if not df.empty:
@@ -220,7 +226,7 @@ if not df.empty:
     daily_required_km = round(remaining_km / remaining_days, 1) if remaining_km > 0 else 0.0
     expected_total_km = round((total_km / current_day) * days_in_month, 1)
 
-    # 마스코트 이미지 출력 세팅
+    # 마스코트 이미지 출력 세팅 (크기 균형이 잡힌 원본 56px 규격)
     if mascot_base64:
         mascot_html = f'<img src="data:image/png;base64,{mascot_base64}" style="width: 56px; height: 56px; border-radius: 50%; border: 2px solid #38BDF8; object-fit: contain; background-color: #FFFFFF; padding: 3px;">'
     else:
