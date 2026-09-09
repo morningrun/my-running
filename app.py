@@ -27,7 +27,7 @@ html_code = f"""
   body {{
     background-color: transparent;
     margin: 0;
-    padding: 0;
+    padding: 10px;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   }}
   .dashboard-card {{
@@ -142,7 +142,7 @@ html_code = f"""
     right: 16px;
     width: 44px;
     height: 44px;
-    background-color: #ffffff; /* 캐릭터 배경 흰색으로 변경 */
+    background-color: #ffffff;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -220,4 +220,5 @@ html_code = f"""
 </html>
 """
 
-components.html(html_code, height=275)
+# 컴포넌트 렌더링 높이를 넉넉하게 320으로 수정
+components.html(html_code, height=320)
