@@ -15,7 +15,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# 화이트 톤 배경 & 대형 마스코트 스타일 CSS
+# 화이트 톤 배경 & 고정 프레임 안쪽 마스코트 확대 스타일 CSS
 st.markdown("""
     <style>
     @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -68,7 +68,6 @@ st.markdown("""
         color: #FFFFFF;
         box-shadow: 0 12px 28px -6px rgba(15, 23, 42, 0.25);
         margin-bottom: 16px;
-        position: relative;
     }
 
     .hero-top-row {
@@ -84,17 +83,24 @@ st.markdown("""
         letter-spacing: 0.8px;
     }
 
-    .mascot-large {
-        width: 130px;
-        height: 130px;
+    /* 동그라미 프레임은 고정하고 안쪽 마스코트만 얼굴 중심으로 크게 확대 */
+    .mascot-frame {
+        width: 75px;
+        height: 75px;
         border-radius: 50%;
-        border: 4px solid #38BDF8;
-        object-fit: cover;
-        object-position: 50% 20%;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+        border: 3px solid #38BDF8;
         background-color: #FFFFFF;
-        display: block;
-        margin-top: -15px;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+    }
+    .mascot-zoomed-img {
+        width: 130%;
+        height: 130%;
+        object-fit: cover;
+        object-position: 50% 18%; /* 얼굴 중심부위로 맞춤 */
     }
 
     .hero-main-row {
@@ -226,9 +232,13 @@ if not df.empty:
     mascot_b64 = get_image_base64(mascot_file) if mascot_file else None
 
     if mascot_b64:
-        mascot_html = f'<img src="data:image/png;base64,{mascot_b64}" class="mascot-large">'
+        mascot_html = f'''
+            <div class="mascot-frame">
+                <img src="data:image/png;base64,{mascot_b64}" class="mascot-zoomed-img">
+            </div>
+        '''
     else:
-        mascot_html = '<span style="font-size: 3rem;">🏃💨</span>'
+        mascot_html = '<span style="font-size: 2.5rem;">🏃💨</span>'
 
     # 1. 메인 히어로 카드 출력
     hero_html = """
