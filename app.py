@@ -204,7 +204,7 @@ GOAL_KM = 200.0
 # 상단 헤더 출력
 header_html = """
     <div class="crew-header">
-        <div class="crew-title">200CREW</div>
+        <div class="crew-title">이실권 200CREW</div>
         <div class="crew-subtitle">📅 {date_str}</div>
     </div>
 """.format(date_str=now.strftime("%Y.%m"))
