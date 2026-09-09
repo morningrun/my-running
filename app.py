@@ -36,7 +36,7 @@ html_code = f"""
   body {{
     background-color: transparent;
     margin: 0;
-    padding: 5px;
+    padding: 10px;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   }}
   .dashboard-card {{
@@ -44,7 +44,7 @@ html_code = f"""
     width: 100%;
     max-width: 400px;
     border-radius: 20px;
-    padding: 16px;
+    padding: 18px;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
     margin: 0 auto;
     box-sizing: border-box;
@@ -113,7 +113,7 @@ html_code = f"""
   .stats-card {{
     background-color: #111827;
     border-radius: 16px;
-    padding: 16px;
+    padding: 18px;
     color: #ffffff;
     position: relative;
   }}
@@ -122,7 +122,7 @@ html_code = f"""
     justify-content: space-between;
     align-items: center;
     margin-bottom: 16px;
-    padding-right: 50px; 
+    padding-right: 45px; 
   }}
   .goal-label-wrapper {{
     display: flex;
@@ -145,12 +145,13 @@ html_code = f"""
     color: #38bdf8;
     letter-spacing: -0.5px;
   }}
+  /* 캐릭터 크기를 아담하게 축소 (36px) */
   .avatar-container {{
     position: absolute;
     top: 14px;
     right: 14px;
-    width: 44px;
-    height: 44px;
+    width: 36px;
+    height: 36px;
     background-color: #ffffff;
     border-radius: 50%;
     display: flex;
@@ -160,8 +161,8 @@ html_code = f"""
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
   }}
   .avatar-container img {{
-    width: 38px;
-    height: 38px;
+    width: 30px;
+    height: 30px;
     border-radius: 50%;
     object-fit: cover;
   }}
@@ -236,4 +237,5 @@ html_code = f"""
 </html>
 """
 
-components.html(html_code, height=340, scrolling=True)
+# 높이를 420px로 넉넉하게 설정하여 하부 잘림 방지
+components.html(html_code, height=420, scrolling=True)
