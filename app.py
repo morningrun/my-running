@@ -217,7 +217,7 @@ GOAL_KM = 200.0
 # 상단 헤더 출력 (실시간 연동된 날짜/요일 및 달력 아이콘 적용)
 header_html = """
     <div class="crew-header">
-        <div class="crew-title">200CREW</div>
+        <div class="crew-title">이실권 200CREW</div>
         <div class="crew-subtitle"><span>{cal_icon}</span> {date_str}</div>
     </div>
 """.format(cal_icon=calendar_icon_html, date_str=date_text)
