@@ -5,6 +5,7 @@ import plotly.express as px
 from datetime import datetime
 import calendar
 import os
+import base64
 
 # 1. 페이지 기본 설정
 st.set_page_config(
@@ -69,10 +70,10 @@ st.markdown("""
         margin-bottom: 16px;
     }
 
-    .hero-top-row {
+    .hero-top-flex {
         display: flex;
         justify-content: space-between;
-        align-items: center;
+        align-items: flex-start;
         margin-bottom: 12px;
     }
     .hero-label {
@@ -80,23 +81,18 @@ st.markdown("""
         color: #38BDF8;
         font-weight: 800;
         letter-spacing: 0.8px;
-    }
-
-    .hero-main-row {
-        display: flex;
-        align-items: baseline;
-        justify-content: space-between;
+        margin-bottom: 4px;
     }
     .hero-km-highlight {
         font-size: 2.3rem;
         font-weight: 900;
-        color: #FFFFFF;
+        color: #FFFFFF !important;
         line-height: 1;
     }
     .hero-km-total {
         font-size: 1.1rem;
         font-weight: 600;
-        color: #94A3B8;
+        color: #94A3B8 !important;
     }
     .hero-percent-tag {
         background: linear-gradient(135deg, #38BDF8 0%, #0284C7 100%);
@@ -106,6 +102,11 @@ st.markdown("""
         font-size: 0.9rem;
         font-weight: 800;
         box-shadow: 0 4px 12px rgba(56, 189, 248, 0.35);
+    }
+    .hero-main-row {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
     }
 
     .grid-container {
@@ -198,34 +199,47 @@ if not df.empty:
     daily_required_km = round(remaining_km / remaining_days, 1) if remaining_km > 0 else 0.0
     expected_total_km = round((total_km / current_day) * days_in_month, 1)
 
-    # 1. 메인 히어로 카드 레이아웃 (컬럼 분할로 이미지 안정적 배치)
-    hero_card_container = st.container()
-    with hero_card_container:
-        st.markdown('<div class="hero-card">', unsafe_allow_html=True)
-        
-        # 카드 내부 상단 행 (라벨과 마스코트 이미지)
-        col_top1, col_top2 = st.columns([4, 1])
-        with col_top1:
-            st.markdown('<div class="hero-label">MONTHLY GOAL</div>', unsafe_allow_html=True)
-        with col_top2:
-            if os.path.exists("mascot.png"):
-                st.image("mascot.png", width=60)
-            else:
-                st.markdown("🏃💨")
-        
-        # 카드 내부 메인 행 (총 거리와 퍼센트)
-        hero_main_html = """
-            <div class="hero-main-row" style="margin-top: 8px;">
+    # 이미지 base64 변환 함수 (HTML 내부에 안정적으로 임베드하기 위함)
+    def get_image_base64(path):
+        if os.path.exists(path):
+            with open(path, "rb") as f:
+                data = f.read()
+            return base64.b64encode(data).decode()
+        return None
+
+    img_base64 = get_image_base64("mascot.png")
+    
+    if img_base64:
+        mascot_html = f'<img src="data:image/png;base64,{img_base64}" style="width: 55px; height: auto; border-radius: 10px;">'
+    else:
+        mascot_html = '<span style="font-size: 2rem;">🏃💨</span>'
+
+    # 1. 메인 히어로 카드 출력 (HTML 단일 블록으로 폰트 깨짐 및 가시성 문제 원천 차단)
+    hero_html = """
+        <div class="hero-card">
+            <div class="hero-top-flex">
+                <div>
+                    <div class="hero-label">MONTHLY GOAL</div>
+                </div>
+                <div>
+                    {mascot}
+                </div>
+            </div>
+            <div class="hero-main-row">
                 <div>
                     <span class="hero-km-highlight">{total}</span>
                     <span class="hero-km-total"> / {goal} km</span>
                 </div>
                 <div class="hero-percent-tag">{pct}%</div>
             </div>
-        """.format(total=total_km, goal=int(GOAL_KM), pct=percent)
-        st.markdown(hero_main_html, unsafe_allow_html=True)
-        
-        st.markdown('</div>', unsafe_allow_html=True)
+        </div>
+    """.format(
+        mascot=mascot_html,
+        total=total_km,
+        goal=int(GOAL_KM),
+        pct=percent
+    )
+    st.markdown(hero_html, unsafe_allow_html=True)
 
     # 2. 프로그레스 바
     st.progress(progress)
