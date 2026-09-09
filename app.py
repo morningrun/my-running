@@ -209,11 +209,11 @@ if not df.empty:
 
     img_base64 = get_image_base64("mascot.png")
     
-    # 동그랗고 파란 테두리 적용 (border-radius: 50%, border: 2px solid #38BDF8)
+    # 크기를 기존 52px에서 1.5배인 78px로 키우고 파란 테두리 적용
     if img_base64:
-        mascot_html = f'<img src="data:image/png;base64,{img_base64}" style="width: 52px; height: 52px; border-radius: 50%; border: 2px solid #38BDF8; object-fit: cover;">'
+        mascot_html = f'<img src="data:image/png;base64,{img_base64}" style="width: 78px; height: 78px; border-radius: 50%; border: 2.5px solid #38BDF8; object-fit: cover;">'
     else:
-        mascot_html = '<span style="font-size: 2rem;">🏃💨</span>'
+        mascot_html = '<span style="font-size: 2.5rem;">🏃💨</span>'
 
     # 1. 메인 히어로 카드 출력
     hero_html = """
