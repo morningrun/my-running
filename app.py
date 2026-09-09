@@ -2,6 +2,7 @@ import base64
 import calendar
 from datetime import datetime
 import os
+from zoneinfo import ZoneInfo
 import plotly.express as px
 import pandas as pd
 import requests
@@ -84,7 +85,6 @@ st.markdown("""
         margin-bottom: 16px;
     }
 
-    /* 상단 목표 레이블 영역 */
     .hero-top-row {
         display: flex;
         justify-content: space-between;
@@ -105,7 +105,6 @@ st.markdown("""
         font-weight: 900;
     }
 
-    /* 하단 현재 거리 및 퍼센트 영역 */
     .hero-bottom-row {
         display: flex;
         align-items: center;
@@ -170,19 +169,21 @@ st.markdown("""
 API_KEY = st.secrets["INTERVALS_API_KEY"]
 ATHLETE_ID = st.secrets["INTERVALS_ATHLETE_ID"]
 
-# 4. 데이터 로딩
+# 한국 시간(KST) 기준 현재 시간 설정
+KST = ZoneInfo("Asia/Seoul")
+now = datetime.now(KST)
+
+# 4. 데이터 로딩 (한국 시간 기준 이번 달 1일러닝 기록 조회)
 @st.cache_data(ttl=300)
-def fetch_running_data():
-    now = datetime.now()
-    start_date = now.strftime("%Y-%m-01")
-    url = f"https://intervals.icu/api/v1/athlete/{ATHLETE_ID}/activities?oldest={start_date}"
-    
+def fetch_running_data(start_date_str):
+    url = f"https://intervals.icu/api/v1/athlete/{ATHLETE_ID}/activities?oldest={start_date_str}"
     response = requests.get(url, auth=("API_KEY", API_KEY))
     if response.status_code == 200:
         return response.json()
     return []
 
-activities = fetch_running_data()
+start_date = now.strftime("%Y-%m-01")
+activities = fetch_running_data(start_date)
 
 # 5. 데이터 전처리
 running_records = []
@@ -198,8 +199,7 @@ if activities:
 
 df = pd.DataFrame(running_records)
 
-# 실시간 시스템 시간 및 요일 연동 계산 (월요일=0 기준 올바른 요일 매핑)
-now = datetime.now()
+# 한국 시간 기준 날짜 및 요일 연동 계산
 year = now.strftime("%Y")
 month_num = now.strftime("%m")
 current_day = now.day
@@ -214,7 +214,7 @@ remaining_days = max(1, days_in_month - current_day + 1)
 
 GOAL_KM = 200.0
 
-# 상단 헤더 출력 (이실권 200CREW 명시)
+# 상단 헤더 출력
 header_html = """
     <div class="crew-header">
         <div class="crew-title">이실권 200CREW</div>
