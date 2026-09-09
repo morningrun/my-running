@@ -1,84 +1,125 @@
 import streamlit as st
 import requests
 import pandas as pd
-from datetime import datetime
 import plotly.express as px
+from datetime import datetime
 
-st.set_page_config(page_title="러닝 대시보드 (200km)", page_icon="🏃", layout="centered")
+# 1. 페이지 기본 설정 (모바일 최적화)
+st.set_page_config(
+    page_title="Monthly Running Dashboard",
+    page_icon="🏃",
+    layout="centered",
+    initial_sidebar_state="collapsed"
+)
 
-st.title("🏃 Running Dashboard")
+# 커스텀 CSS (깔끔한 카드 스타일 및 여백 정리)
+st.markdown("""
+    <style>
+    .block-container { padding-top: 1.5rem; padding-bottom: 2rem; }
+    .metric-card {
+        background-color: #F8F9FA;
+        border-radius: 12px;
+        padding: 16px;
+        text-align: center;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .metric-title { font-size: 0.85rem; color: #6C757D; font-weight: 600; margin-bottom: 4px; }
+    .metric-value { font-size: 1.6rem; color: #212529; font-weight: 700; }
+    </style>
+""", unsafe_allow_html=True)
 
-# 1. Secrets 안전하게 읽기 (대소문자/공백 처리)
-def get_secret(target_key):
-    for key, value in st.secrets.items():
-        if key.strip().lower() == target_key.strip().lower():
-            return value
-    return None
+# 2. Secrets 수집
+API_KEY = st.secrets["INTERVALS_API_KEY"]
+ATHLETE_ID = st.secrets["INTERVALS_ATHLETE_ID"]
 
-api_key = get_secret("INTERVALS_API_KEY")
-athlete_id = get_secret("INTERVALS_ATHLETE_ID")
-
-if not api_key or not athlete_id:
-    st.info("💡 Intervals.icu 연동 설정을 완료해 주세요. (Streamlit Secrets 설정 필요)")
-    st.stop()
-
-# 2. Intervals.icu API 데이터 호출
+# 3. 데이터 로딩 함수
 @st.cache_data(ttl=300)
-def fetch_running_data(api_key, athlete_id):
+def fetch_running_data():
     now = datetime.now()
-    oldest = now.replace(day=1).strftime("%Y-%m-%d")
-    newest = now.strftime("%Y-%m-%d")
+    start_date = now.strftime("%Y-%m-01")
+    url = f"https://intervals.icu/api/v1/athlete/{ATHLETE_ID}/activities?oldest={start_date}"
     
-    url = f"https://intervals.icu/api/v1/athlete/{athlete_id}/activities?oldest={oldest}&newest={newest}"
+    response = requests.get(url, auth=("API_KEY", API_KEY))
+    if response.status_code == 200:
+        return response.json()
+    return []
+
+activities = fetch_running_data()
+
+# 4. 러닝 데이터 전처리
+running_records = []
+if activities:
+    for act in activities:
+        if act.get("type") == "Run":
+            distance_km = round(act.get("distance", 0) / 1000, 2)
+            start_date_local = act.get("start_date_local", "")[:10]
+            moving_time_min = round(act.get("moving_time", 0) / 60, 1)
+            running_records.append({
+                "Date": start_date_local,
+                "Distance": distance_km,
+                "Time": moving_time_min
+            })
+
+df = pd.DataFrame(running_records)
+
+# 5. 메인 대시보드 화면 구성
+st.title("🏃 월간 러닝 대시보드")
+st.caption(f"📅 {datetime.now().strftime('%Y년 %m월')} 진행 상황")
+
+GOAL_KM = 200.0
+
+if not df.empty:
+    total_km = round(df["Distance"].sum(), 1)
+    run_count = len(df)
+    remaining_km = max(0.0, round(GOAL_KM - total_km, 1))
+    progress = min(1.0, total_km / GOAL_KM)
+
+    # 상단 메트릭 카드 3개 배치
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown(f'<div class="metric-card"><div class="metric-title">누적 거리</div><div class="metric-value">{total_km}<span style="font-size:1rem;"> km</span></div></div>', unsafe_allow_html=True)
+    with col2:
+        st.markdown(f'<div class="metric-card"><div class="metric-title">달성률</div><div class="metric-value">{int(progress * 100)}<span style="font-size:1rem;"> %</span></div></div>', unsafe_allow_html=True)
+    with col3:
+        st.markdown(f'<div class="metric-card"><div class="metric-title">남은 거리</div><div class="metric-value">{remaining_km}<span style="font-size:1rem;"> km</span></div></div>', unsafe_allow_html=True)
+
+    st.write("")
     
-    try:
-        # Intervals.icu는 Basic Auth 아이디 자리에 "API_KEY" 문자를 그대로 사용합니다.
-        response = requests.get(url, auth=("API_KEY", api_key), timeout=10)
-        if response.status_code == 200:
-            return response.json()
-        else:
-            st.error(f"데이터를 가져오는데 실패했습니다. (응답 코드: {response.status_code})")
-            return []
-    except Exception as e:
-        st.error(f"API 연결 오류: {e}")
-        return []
+    # 진행률 프로그레스 바
+    st.progress(progress)
+    st.caption(f"목표 200km 중 **{total_km}km** 완료 (총 {run_count}회 러닝)")
 
-activities = fetch_running_data(api_key, athlete_id)
+    st.divider()
 
-# 3. 러닝 데이터 정제
-runs = [act for act in activities if act.get("type") in ["Run", "VirtualRun", "Treadmill"]]
+    # 일자별 거리 차트 (Plotly 사용)
+    st.subheader("📊 일별 러닝 기록")
+    daily_df = df.groupby("Date", as_index=False)["Distance"].sum()
 
-total_distance_m = sum(act.get("distance", 0) for act in runs)
-total_distance_km = round(total_distance_m / 1000, 2)
-target_km = 200.0
-progress_pct = min(round((total_distance_km / target_km) * 100, 1), 100.0)
-
-# 4. 대시보드 UI 구성
-col1, col2 = st.columns(2)
-with col1:
-    st.metric("이번 달 누적 거리", f"{total_distance_km} km", f"목표 {target_km} km")
-with col2:
-    st.metric("러닝 횟수", f"{len(runs)} 회")
-
-st.write("### 🎯 월간 목표 달성률 (200km)")
-st.progress(progress_pct / 100)
-st.caption(f"현재 달성률: {progress_pct}%")
-
-if runs:
-    st.write("### 🏃 최근 러닝 기록")
-    df_data = []
-    for run in runs:
-        df_data.append({
-            "날짜": run.get("start_date_local", "")[:10],
-            "제목": run.get("name", "러닝"),
-            "거리(km)": round(run.get("distance", 0) / 1000, 2),
-            "시간(분)": round(run.get("moving_time", 0) / 60, 1)
-        })
-    df = pd.DataFrame(df_data)
+    fig = px.bar(
+        daily_df,
+        x="Date",
+        y="Distance",
+        labels={"Date": "날짜", "Distance": "거리 (km)"},
+        text_auto=".1f"
+    )
     
-    fig = px.bar(df, x="날짜", y="거리(km)", title="일자별 러닝 거리 (km)", text_auto=True)
+    fig.update_traces(
+        marker_color="#FF4B4B",
+        textposition="outside",
+        cliponaxis=False
+    )
+    
+    fig.update_layout(
+        xaxis_title=None,
+        yaxis_title="km",
+        margin=dict(l=10, r=10, t=20, b=10),
+        height=300,
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+        yaxis=dict(showgrid=True, gridcolor="#F0F2F6")
+    )
+    
     st.plotly_chart(fig, use_container_width=True)
-    
-    st.dataframe(df, use_container_width=True)
+
 else:
-    st.info("이번 달 등록된 러닝 기록이 없습니다.")
+    st.info("이번 달 등록된 러닝 데이터가 없습니다.")
