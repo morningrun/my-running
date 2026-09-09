@@ -1,8 +1,9 @@
+import base6s
 from datetime import datetime
 import streamlit as st
 import streamlit.components.v1 as components
 
-# 오늘 날짜 및 요일 자동 계산
+# 오늘 날짜 및 요일 자동 계산 (현재 날짜 기준 연동)
 now = datetime.now()
 year = now.strftime("%Y")
 month_num = now.strftime("%m")
@@ -17,6 +18,14 @@ week_days = ['일', '월', '화', '수', '목', '금', '토']
 current_weekday = week_days[now.weekday()]
 date_text = f"{year}.{month_num}.{current_day:02d} ({current_weekday})"
 
+# local mascot.png 파일을 읽어서 base64로 인코딩 (이미지 깨짐 방지)
+try:
+    with open("mascot.png", "rb") as img_file:
+        encoded_img = base64.b64encode(img_file.read()).decode("utf-8")
+        avatar_src = f"data:image/png;base64,{encoded_img}"
+except FileNotFoundError:
+    avatar_src = ""  # 파일이 없을 경우의 예외 처리
+
 # 독립된 HTML/CSS 컴포넌트 코드
 html_code = f"""
 <!DOCTYPE html>
@@ -27,15 +36,15 @@ html_code = f"""
   body {{
     background-color: transparent;
     margin: 0;
-    padding: 10px;
+    padding: 5px;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   }}
   .dashboard-card {{
     background-color: #ffffff;
     width: 100%;
     max-width: 400px;
-    border-radius: 24px;
-    padding: 20px;
+    border-radius: 20px;
+    padding: 16px;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
     margin: 0 auto;
     box-sizing: border-box;
@@ -44,7 +53,7 @@ html_code = f"""
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
   }}
   .crew-title {{
     font-size: 20px;
@@ -103,8 +112,8 @@ html_code = f"""
   }}
   .stats-card {{
     background-color: #111827;
-    border-radius: 20px;
-    padding: 20px;
+    border-radius: 16px;
+    padding: 16px;
     color: #ffffff;
     position: relative;
   }}
@@ -112,7 +121,7 @@ html_code = f"""
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
     padding-right: 50px; 
   }}
   .goal-label-wrapper {{
@@ -138,8 +147,8 @@ html_code = f"""
   }}
   .avatar-container {{
     position: absolute;
-    top: 16px;
-    right: 16px;
+    top: 14px;
+    right: 14px;
     width: 44px;
     height: 44px;
     background-color: #ffffff;
@@ -147,12 +156,19 @@ html_code = f"""
     display: flex;
     align-items: center;
     justify-content: center;
+    overflow: hidden;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  }}
+  .avatar-container img {{
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    object-fit: cover;
   }}
   .divider {{
     height: 1px;
     background-color: rgba(255, 255, 255, 0.1);
-    margin-bottom: 20px;
+    margin-bottom: 16px;
   }}
   .achievement-row {{
     display: flex;
@@ -160,7 +176,7 @@ html_code = f"""
     align-items: flex-end;
   }}
   .achieved-km {{
-    font-size: 38px;
+    font-size: 36px;
     font-weight: 900;
     letter-spacing: -1px;
     line-height: 1;
@@ -196,7 +212,7 @@ html_code = f"""
     </div>
     <div class="stats-card">
       <div class="avatar-container">
-        <span style="font-size: 22px;">🏃‍♂️</span>
+        <img src="{avatar_src}" alt="Mascot">
       </div>
       <div class="goal-row">
         <div class="goal-label-wrapper">
@@ -220,5 +236,4 @@ html_code = f"""
 </html>
 """
 
-# 컴포넌트 렌더링 높이를 넉넉하게 400으로 설정
-components.html(html_code, height=400)
+components.html(html_code, height=340, scrolling=True)
