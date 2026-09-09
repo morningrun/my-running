@@ -38,7 +38,7 @@ st.markdown("""
         margin-bottom: 12px;
     }
     .crew-title {
-        font-size: 1.6rem !important;
+        font-size: 1.5rem !important;
         font-weight: 900;
         letter-spacing: -0.5px;
         color: #1A1D20;
@@ -51,7 +51,7 @@ st.markdown("""
         font-weight: 500;
     }
 
-    /* 메인 히어로 카드 (고급 다크 스레이트 & 모던 그라데이션) */
+    /* 메인 히어로 카드 */
     .hero-card {
         background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
         border-radius: 18px;
@@ -77,7 +77,7 @@ st.markdown("""
     .hero-km-highlight {
         font-size: 2.3rem;
         font-weight: 900;
-        color: #38BDF8; /* 세련된 인디고/블루 포인트 */
+        color: #38BDF8;
         line-height: 1;
     }
     .hero-km-total {
@@ -94,7 +94,7 @@ st.markdown("""
         font-weight: 700;
     }
 
-    /* 상세 지표 2x2 카드 (차분한 아이보리/그레이 톤) */
+    /* 상세 지표 2x2 카드 */
     .grid-container {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -170,10 +170,10 @@ remaining_days = max(1, days_in_month - current_day + 1)
 
 GOAL_KM = 200.0
 
-# 상단 헤더
+# 상단 헤더 (타이틀 변경: 이실권 200CREW)
 st.markdown(f'''
     <div class="crew-header">
-        <div class="crew-title">200CREW</div>
+        <div class="crew-title">이실권 200CREW</div>
         <div class="crew-subtitle">📅 {now.strftime("%Y.%m")} Target</div>
     </div>
 ''', unsafe_allow_html=True)
@@ -188,7 +188,7 @@ if not df.empty:
     daily_required_km = round(remaining_km / remaining_days, 1) if remaining_km > 0 else 0.0
     expected_total_km = round((total_km / current_day) * days_in_month, 1)
 
-    # 1. 메인 200km 히어로 카드 (달성도 & 현재 거리 최우선 강조)
+    # 1. 메인 200km 히어로 카드
     hero_html = f"""
     <div class="hero-card">
         <div class="hero-label">CURRENT PROGRESS</div>
@@ -209,7 +209,7 @@ if not df.empty:
 
     st.write("")
 
-    # 3. 고급스러운 2x2 상세 지표 카드
+    # 3. 상세 지표 카드
     sub_cards_html = f"""
     <div class="grid-container">
         <div class="sub-card">
@@ -232,7 +232,7 @@ if not df.empty:
     """
     st.markdown(sub_cards_html, unsafe_allow_html=True)
 
-    # 4. 차분한 톤의 고정형 일별 참고 차트
+    # 4. 일별 참고 차트
     st.markdown("<p style='font-size:0.8rem; font-weight:700; color:#475569; margin-bottom:4px;'>📊 일별 러닝 기록 (km)</p>", unsafe_allow_html=True)
     
     daily_df = df.groupby("Date", as_index=False)["Distance"].sum()
@@ -245,7 +245,7 @@ if not df.empty:
     )
     
     fig.update_traces(
-        marker_color="#64748B", # 차분한 딥 그레이/슬레이트
+        marker_color="#64748B",
         textposition="outside",
         cliponaxis=False,
         hoverinfo="none"
