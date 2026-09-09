@@ -15,7 +15,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# 2. 마스코트 스타일 CSS
+# 2. 마스코트 및 화면 스타일 CSS
 st.markdown("""
     <style>
     @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -160,14 +160,14 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 3. 사이드바에 마스코트 업로더 추가 (파일 경로 문제 원천 차단)
+# 3. 사이드바 마스코트 업로더
 with st.sidebar:
     st.markdown("### ⚙️ 설정")
     uploaded_mascot = st.file_uploader("마스코트 이미지 업로드 (png/jpg)", type=["png", "jpg", "jpeg"])
     if uploaded_mascot is not None:
         with open("mascot.png", "wb") as f:
             f.write(uploaded_mascot.getbuffer())
-        st.success("마스코트가 저장되었습니다! 새로고침 해주세요.")
+        st.success("마스코트가 저장되었습니다!")
 
 # 4. Secrets 수집
 API_KEY = st.secrets["INTERVALS_API_KEY"]
@@ -209,7 +209,7 @@ remaining_days = max(1, days_in_month - current_day + 1)
 
 GOAL_KM = 200.0
 
-# 이미지를 base64로 안전하게 인코딩하는 함수
+# 이미지를 base64로 인코딩하는 함수
 def get_image_base64(file_path):
     if os.path.exists(file_path):
         with open(file_path, "rb") as f:
@@ -236,9 +236,14 @@ if not df.empty:
     daily_required_km = round(remaining_km / remaining_days, 1) if remaining_km > 0 else 0.0
     expected_total_km = round((total_km / current_day) * days_in_month, 1)
 
-    # 로컬에 저장된 mascot.png 불러오기
+    # 업로드된 mascot.png 또는 기본 파일 로드
     mascot_file = "mascot.png" if os.path.exists("mascot.png") else ("m.png" if os.path.exists("m.png") else None)
-    mascot_b64 = get_image_base64(mascot_file) if mascot_file else None
+    
+    # 만약 사이드바를 통해 방금 업로드된 파일이 있다면 그 버퍼를 우선 사용
+    if uploaded_mascot is not None:
+        mascot_b64 = base64.b64encode(uploaded_mascot.getvalue()).decode()
+    else:
+        mascot_b64 = get_image_base64(mascot_file) if mascot_file else None
 
     if mascot_b64:
         mascot_html = f'''
