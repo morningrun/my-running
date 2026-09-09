@@ -15,7 +15,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# 화이트 톤 배경 & 고정 프레임 안쪽 마스코트 1.5배 추가 확대 스타일 CSS
+# 화이트 톤 배경 & 마스코트 추가 확대 및 얼굴 중심 정렬 스타일 CSS
 st.markdown("""
     <style>
     @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -83,7 +83,7 @@ st.markdown("""
         letter-spacing: 0.8px;
     }
 
-    /* 동그라미 프레임 고정, 안쪽 마스코트를 대폭 확대하여 얼굴 강조 */
+    /* 동그라미 프레임 고정, 마스코트 더 키우고 얼굴 중심 정렬 */
     .mascot-frame {
         width: 75px;
         height: 75px;
@@ -97,10 +97,10 @@ st.markdown("""
         box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
     }
     .mascot-zoomed-img {
-        width: 330%;
-        height: 330%;
+        width: 420%;
+        height: 420%;
         object-fit: cover;
-        object-position: 50% 25%; /* 얼굴 중심 맞춤 */
+        object-position: 50% 28%; /* 얼굴이 정중앙에 오도록 조절된 값 */
     }
 
     .hero-main-row {
