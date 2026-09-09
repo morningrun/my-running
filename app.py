@@ -5,6 +5,7 @@ import plotly.express as px
 from datetime import datetime
 import calendar
 import os
+import base64
 
 # 1. 페이지 기본 설정
 st.set_page_config(
@@ -55,7 +56,7 @@ st.markdown("""
         border-radius: 12px;
     }
 
-    /* 3D 히어로 카드 */
+    /* 3D 히어로 카드 (마스코트 통합 레이아웃) */
     .hero-card {
         background: linear-gradient(145deg, #1E293B 0%, #0F172A 100%);
         border-radius: 22px;
@@ -69,13 +70,24 @@ st.markdown("""
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 8px;
+        margin-bottom: 12px;
     }
     .hero-label {
         font-size: 0.8rem;
         color: #38BDF8;
         font-weight: 800;
         letter-spacing: 0.8px;
+    }
+
+    /* 조그만 동그라미 마스코트 프레임 스타일 */
+    .mascot-avatar {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        border: 2.5px solid #38BDF8;
+        object-fit: cover;
+        object-position: top center; /* 얼굴과 상체 중심 배치 */
+        box-shadow: 0 4px 12px rgba(56, 189, 248, 0.4);
     }
 
     .hero-main-row {
@@ -177,6 +189,14 @@ remaining_days = max(1, days_in_month - current_day + 1)
 
 GOAL_KM = 200.0
 
+# 이미지를 base64로 인코딩하여 HTML에 내장하는 함수
+def get_image_base64(file_path):
+    if os.path.exists(file_path):
+        with open(file_path, "rb") as f:
+            data = f.read()
+        return base64.b64encode(data).decode()
+    return None
+
 # 상단 헤더
 st.markdown(f'''
     <div class="crew-header">
@@ -195,32 +215,33 @@ if not df.empty:
     daily_required_km = round(remaining_km / remaining_days, 1) if remaining_km > 0 else 0.0
     expected_total_km = round((total_km / current_day) * days_in_month, 1)
 
-    # 1. 메인 히어로 카드 + 마스코트 이미지 출력
-    col_text, col_img = st.columns([2.2, 1])
-    
-    with col_text:
-        st.markdown(f'''
-            <div class="hero-card">
-                <div class="hero-top-row">
-                    <div class="hero-label">MONTHLY GOAL</div>
-                </div>
-                <div class="hero-main-row">
-                    <div>
-                        <span class="hero-km-highlight">{total_km}</span>
-                        <span class="hero-km-total"> / {int(GOAL_KM)} km</span>
-                    </div>
-                    <div class="hero-percent-tag">{percent}%</div>
-                </div>
-            </div>
-        ''', unsafe_allow_html=True)
+    # 마스코트 이미지 인코딩
+    mascot_file = "m.png" if os.path.exists("m.png") else ("mascot.png" if os.path.exists("mascot.png") else None)
+    mascot_b64 = get_image_base64(mascot_file) if mascot_file else None
 
-    with col_img:
-        mascot_file = "m.png" if os.path.exists("m.png") else ("mascot.png" if os.path.exists("mascot.png") else None)
-        
-        if mascot_file:
-            st.image(mascot_file, use_container_width=True)
-        else:
-            st.write("🏃💨")
+    # 마스코트 HTML 요소 생성
+    if mascot_b64:
+        mascot_html = f'<img src="data:image/png;base64,{mascot_b64}" class="mascot-avatar">'
+    else:
+        mascot_html = '<span style="font-size: 2rem;">🏃💨</span>'
+
+    # 1. 카드 내부에 조그맣게 마스코트 배치
+    hero_html = f'''
+        <div class="hero-card">
+            <div class="hero-top-row">
+                <div class="hero-label">MONTHLY GOAL</div>
+                <div>{mascot_html}</div>
+            </div>
+            <div class="hero-main-row">
+                <div>
+                    <span class="hero-km-highlight">{total_km}</span>
+                    <span class="hero-km-total"> / {int(GOAL_KM)} km</span>
+                </div>
+                <div class="hero-percent-tag">{percent}%</div>
+            </div>
+        </div>
+    '''
+    st.markdown(hero_html, unsafe_allow_html=True)
 
     # 2. 프로그레스 바
     st.progress(progress)
