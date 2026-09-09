@@ -3,7 +3,6 @@ import calendar
 from datetime import datetime
 from zoneinfo import ZoneInfo
 import os
-
 import plotly.express as px
 import pandas as pd
 import requests
@@ -11,7 +10,7 @@ import streamlit as st
 
 
 # =========================================================
-# 0. 한국시간 설정
+# 한국 시간
 # =========================================================
 KST = ZoneInfo("Asia/Seoul")
 
@@ -49,16 +48,13 @@ st.set_page_config(
 # =========================================================
 st.markdown("""
     <style>
-
     @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
 
     * {
         font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif !important;
     }
 
-    header {
-        visibility: hidden;
-    }
+    header {visibility: hidden;}
 
     .stApp {
         background-color: #F8FAFC;
@@ -211,7 +207,6 @@ st.markdown("""
         background: linear-gradient(90deg, #38BDF8 0%, #0284C7 100%);
         border-radius: 10px;
     }
-
     </style>
 """, unsafe_allow_html=True)
 
@@ -224,24 +219,33 @@ ATHLETE_ID = st.secrets["INTERVALS_ATHLETE_ID"]
 
 
 # =========================================================
-# 4. 최신 기록 동기화 버튼
+# 4. 현재 날짜 - 한국시간 기준
 # =========================================================
-# 버튼을 누르면 기존 5분 캐시를 삭제하고
-# Intervals.icu에서 최신 데이터를 다시 가져옵니다.
-if st.button("🔄 최신 기록 동기화", use_container_width=True):
-    st.cache_data.clear()
-    st.rerun()
+now = datetime.now(KST)
+
+year = now.strftime("%Y")
+month_num = now.strftime("%m")
+current_month = now.strftime("%Y-%m")
+
+current_day = now.day
+
+week_days = ['월', '화', '수', '목', '금', '토', '일']
+current_weekday = week_days[now.weekday()]
+
+date_text = f"{year}.{month_num}.{current_day:02d} ({current_weekday})"
+
+days_in_month = calendar.monthrange(now.year, now.month)[1]
+remaining_days = max(1, days_in_month - current_day + 1)
+
+GOAL_KM = 200.0
 
 
 # =========================================================
 # 5. 데이터 로딩
+#    ※ 캐시를 사용하지 않아 새 기록을 바로 반영
 # =========================================================
-@st.cache_data(ttl=300)
 def fetch_running_data():
-    # 반드시 한국시간 기준
-    now = datetime.now(KST)
 
-    # 매월 1일부터 조회
     start_date = now.strftime("%Y-%m-01")
 
     url = (
@@ -249,16 +253,20 @@ def fetch_running_data():
         f"{ATHLETE_ID}/activities?oldest={start_date}"
     )
 
-    response = requests.get(
-        url,
-        auth=("API_KEY", API_KEY),
-        timeout=20
-    )
+    try:
+        response = requests.get(
+            url,
+            auth=("API_KEY", API_KEY),
+            timeout=20
+        )
 
-    if response.status_code == 200:
-        return response.json()
+        if response.status_code == 200:
+            return response.json()
 
-    return []
+        return []
+
+    except requests.RequestException:
+        return []
 
 
 activities = fetch_running_data()
@@ -269,17 +277,11 @@ activities = fetch_running_data()
 # =========================================================
 running_records = []
 
-# 현재 한국시간
-now = datetime.now(KST)
-
-# 현재 월
-current_month = now.strftime("%Y-%m")
-
 if activities:
 
     for act in activities:
 
-        # 러닝만 집계
+        # 러닝만 계산
         if act.get("type") == "Run":
 
             distance_km = round(
@@ -292,11 +294,7 @@ if activities:
                 ""
             )[:10]
 
-            # -------------------------------------------------
-            # 안전장치
-            # API가 다른 날짜 데이터를 반환하더라도
-            # 현재 월 데이터만 확실하게 집계
-            # -------------------------------------------------
+            # 현재 월 기록만 포함
             if start_date_local.startswith(current_month):
 
                 running_records.append({
@@ -309,70 +307,16 @@ df = pd.DataFrame(running_records)
 
 
 # =========================================================
-# 7. 실시간 시스템 시간 및 요일 연동
-#    한국시간 기준
+# 7. 상단 헤더
 # =========================================================
-now = datetime.now(KST)
-
-year = now.strftime("%Y")
-month_num = now.strftime("%m")
-current_day = now.day
-
-week_days = [
-    '월',
-    '화',
-    '수',
-    '목',
-    '금',
-    '토',
-    '일'
-]
-
-current_weekday = week_days[now.weekday()]
-
-date_text = (
-    f"{year}.{month_num}.{current_day:02d} "
-    f"({current_weekday})"
-)
-
 calendar_icon_html = "🗓️"
 
-
-# =========================================================
-# 8. 이번 달 날짜 계산
-# =========================================================
-days_in_month = calendar.monthrange(
-    now.year,
-    now.month
-)[1]
-
-remaining_days = max(
-    1,
-    days_in_month - current_day + 1
-)
-
-
-# =========================================================
-# 9. 월간 목표
-# =========================================================
-GOAL_KM = 200.0
-
-
-# =========================================================
-# 10. 상단 헤더 출력
-# =========================================================
 header_html = """
     <div class="crew-header">
-
-        <div class="crew-title">
-            이실권 200CREW
-        </div>
-
+        <div class="crew-title">이실권 200CREW</div>
         <div class="crew-subtitle">
-            <span>{cal_icon}</span>
-            {date_str}
+            <span>{cal_icon}</span> {date_str}
         </div>
-
     </div>
 """.format(
     cal_icon=calendar_icon_html,
@@ -386,34 +330,25 @@ st.markdown(
 
 
 # =========================================================
-# 11. 운동 데이터가 있는 경우
+# 8. 러닝 기록이 있는 경우
 # =========================================================
 if not df.empty:
 
     # -----------------------------------------------------
-    # 월간 누적 거리
+    # 월간 총 거리 계산
     # -----------------------------------------------------
     total_km = round(
         df["Distance"].sum(),
         2
     )
 
-    # -----------------------------------------------------
-    # 월간 러닝 횟수
-    # -----------------------------------------------------
     run_count = len(df)
 
-    # -----------------------------------------------------
-    # 목표까지 남은 거리
-    # -----------------------------------------------------
     remaining_km = max(
         0.0,
         round(GOAL_KM - total_km, 2)
     )
 
-    # -----------------------------------------------------
-    # 목표 달성률
-    # -----------------------------------------------------
     progress = min(
         1.0,
         total_km / GOAL_KM
@@ -424,64 +359,44 @@ if not df.empty:
         1
     )
 
-    # -----------------------------------------------------
-    # 남은 기간 동안 하루에 필요한 거리
-    # -----------------------------------------------------
     daily_required_km = (
         round(
             remaining_km / remaining_days,
-            1
+            2
         )
         if remaining_km > 0
         else 0.0
     )
 
-    # -----------------------------------------------------
-    # 현재 페이스로 예상되는 월간 총거리
-    # -----------------------------------------------------
     expected_total_km = round(
         (total_km / current_day) * days_in_month,
-        1
+        2
     )
 
 
     # =====================================================
-    # 12. 마스코트 이미지 출력 세팅
+    # 마스코트 이미지 출력
     # =====================================================
     if mascot_base64:
 
         mascot_html = (
-            f'<img '
-            f'src="data:image/png;base64,{mascot_base64}" '
-            f'style="'
-            f'width: 56px; '
-            f'height: 56px; '
-            f'border-radius: 50%; '
-            f'border: 2px solid #38BDF8; '
-            f'object-fit: contain; '
-            f'background-color: #FFFFFF; '
-            f'padding: 3px; '
-            f'display: block; '
-            f'margin-left: auto;'
-            f'">'
+            f'<img src="data:image/png;base64,{mascot_base64}" '
+            'style="width: 56px; height: 56px; border-radius: 50%; '
+            'border: 2px solid #38BDF8; object-fit: contain; '
+            'background-color: #FFFFFF; padding: 3px; '
+            'display: block; margin-left: auto;">'
         )
 
     else:
 
         mascot_html = (
-            '<span '
-            'style="'
-            'font-size: 1.8rem; '
-            'display: block; '
-            'text-align: right;'
-            '">'
-            '🏃💨'
-            '</span>'
+            '<span style="font-size: 1.8rem; '
+            'display: block; text-align: right;">🏃💨</span>'
         )
 
 
     # =====================================================
-    # 13. 메인 히어로 카드
+    # 9. 메인 히어로 카드
     # =====================================================
     hero_html = """
         <div class="hero-card">
@@ -544,7 +459,7 @@ if not df.empty:
 
 
     # =====================================================
-    # 14. 프로그레스 바
+    # 10. 프로그레스 바
     # =====================================================
     st.progress(progress)
 
@@ -556,7 +471,7 @@ if not df.empty:
 
 
     # =====================================================
-    # 15. 서브 카드 출력
+    # 11. 서브 카드
     # =====================================================
     sub_cards_html = """
     <div class="grid-container">
@@ -619,9 +534,9 @@ if not df.empty:
     </div>
     """.format(
         rem_km=f"{remaining_km:.2f}",
-        daily_km=f"{daily_required_km:.1f}",
+        daily_km=f"{daily_required_km:.2f}",
         rem_days=remaining_days,
-        exp_km=f"{expected_total_km:.1f}"
+        exp_km=f"{expected_total_km:.2f}"
     )
 
     st.markdown(
@@ -631,26 +546,22 @@ if not df.empty:
 
 
     # =====================================================
-    # 16. 일별 차트
+    # 12. 일별 차트
     # =====================================================
     st.markdown(
-        "<p style='"
-        "font-size:0.82rem; "
-        "font-weight:800; "
-        "color:#334155; "
-        "margin-bottom:6px;"
-        "'>📊 일별 참고 기록 (km)</p>",
+        "<p style='font-size:0.82rem; font-weight:800; "
+        "color:#334155; margin-bottom:6px;'>"
+        "📊 일별 참고 기록 (km)"
+        "</p>",
         unsafe_allow_html=True
     )
 
 
     daily_df = (
-        df
-        .groupby(
+        df.groupby(
             "Date",
             as_index=False
-        )["Distance"]
-        .sum()
+        )["Distance"].sum()
     )
 
 
@@ -677,15 +588,11 @@ if not df.empty:
             t=15,
             b=0
         ),
-
         height=150,
-
         xaxis_title=None,
         yaxis_title=None,
-
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
-
         xaxis=dict(
             fixedrange=True,
             showgrid=False,
@@ -694,7 +601,6 @@ if not df.empty:
                 color="#64748B"
             )
         ),
-
         yaxis=dict(
             fixedrange=True,
             showgrid=True,
@@ -704,7 +610,6 @@ if not df.empty:
                 color="#64748B"
             )
         ),
-
         font=dict(
             size=10,
             color="#475569"
@@ -724,7 +629,7 @@ if not df.empty:
 
 
 # =========================================================
-# 17. 이번 달 운동 기록이 없는 경우
+# 13. 러닝 기록이 없는 경우
 # =========================================================
 else:
 
