@@ -1,5 +1,6 @@
 import base64
 import calendar
+import textwrap
 from datetime import datetime
 from zoneinfo import ZoneInfo
 import os
@@ -47,167 +48,169 @@ st.set_page_config(
 # 2. 화면 스타일 CSS
 # =========================================================
 st.markdown("""
-    <style>
-    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+<style>
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
 
-    * {
-        font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif !important;
-    }
+* {
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif !important;
+}
 
-    header {visibility: hidden;}
+header {
+    visibility: hidden;
+}
 
-    .stApp {
-        background-color: #F8FAFC;
-    }
+.stApp {
+    background-color: #F8FAFC;
+}
 
-    .block-container {
-        padding-top: 0.8rem !important;
-        padding-bottom: 1.5rem !important;
-        padding-left: 0.8rem !important;
-        padding-right: 0.8rem !important;
-    }
+.block-container {
+    padding-top: 0.8rem !important;
+    padding-bottom: 1.5rem !important;
+    padding-left: 0.8rem !important;
+    padding-right: 0.8rem !important;
+}
 
-    .crew-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 14px;
-        padding: 0 4px;
-    }
+.crew-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+    padding: 0 4px;
+}
 
-    .crew-title {
-        font-size: 1.4rem !important;
-        font-weight: 900;
-        letter-spacing: -0.5px;
-        color: #0F172A;
-        margin: 0;
-    }
+.crew-title {
+    font-size: 1.4rem !important;
+    font-weight: 900;
+    letter-spacing: -0.5px;
+    color: #0F172A;
+    margin: 0;
+}
 
-    .crew-subtitle {
-        font-size: 0.78rem;
-        color: #64748B;
-        font-weight: 600;
-        background: #FFFFFF;
-        border: 1px solid #E2E8F0;
-        padding: 4px 10px;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        gap: 5px;
-    }
+.crew-subtitle {
+    font-size: 0.78rem;
+    color: #64748B;
+    font-weight: 600;
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    padding: 4px 10px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
 
-    .hero-card {
-        background: linear-gradient(145deg, #1E293B 0%, #0F172A 100%);
-        border-radius: 22px;
-        padding: 20px 22px;
-        color: #FFFFFF;
-        box-shadow: 0 12px 28px -6px rgba(15, 23, 42, 0.25);
-        margin-bottom: 16px;
-    }
+.hero-card {
+    background: linear-gradient(145deg, #1E293B 0%, #0F172A 100%);
+    border-radius: 22px;
+    padding: 20px 22px;
+    color: #FFFFFF;
+    box-shadow: 0 12px 28px -6px rgba(15, 23, 42, 0.25);
+    margin-bottom: 16px;
+}
 
-    /* 상단 목표 레이블 영역 */
-    .hero-top-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        padding-bottom: 12px;
-        margin-bottom: 14px;
-    }
+/* 상단 목표 레이블 영역 */
+.hero-top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 12px;
+    margin-bottom: 14px;
+}
 
-    .hero-goal-title {
-        font-size: 0.82rem;
-        color: #94A3B8;
-        font-weight: 700;
-        letter-spacing: 0.5px;
-    }
+.hero-goal-title {
+    font-size: 0.82rem;
+    color: #94A3B8;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
 
-    .hero-goal-target {
-        font-size: 1.05rem;
-        color: #38BDF8;
-        font-weight: 900;
-    }
+.hero-goal-target {
+    font-size: 1.05rem;
+    color: #38BDF8;
+    font-weight: 900;
+}
 
-    /* 하단 현재 거리 및 퍼센트 영역 */
-    .hero-bottom-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-    }
+/* 하단 현재 거리 및 퍼센트 영역 */
+.hero-bottom-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
 
-    .hero-km-highlight {
-        font-size: 2.5rem;
-        font-weight: 900;
-        color: #FFFFFF !important;
-        line-height: 1;
-    }
+.hero-km-highlight {
+    font-size: 2.5rem;
+    font-weight: 900;
+    color: #FFFFFF !important;
+    line-height: 1;
+}
 
-    .hero-km-label {
-        font-size: 1rem;
-        font-weight: 600;
-        color: #94A3B8 !important;
-        margin-left: 2px;
-    }
+.hero-km-label {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #94A3B8 !important;
+    margin-left: 2px;
+}
 
-    .hero-percent-tag {
-        background: linear-gradient(135deg, #38BDF8 0%, #0284C7 100%);
-        color: #FFFFFF;
-        padding: 6px 14px;
-        border-radius: 20px;
-        font-size: 0.95rem;
-        font-weight: 800;
-        box-shadow: 0 4px 12px rgba(56, 189, 248, 0.35);
-        display: inline-block;
-        text-align: center;
-    }
+.hero-percent-tag {
+    background: linear-gradient(135deg, #38BDF8 0%, #0284C7 100%);
+    color: #FFFFFF;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.95rem;
+    font-weight: 800;
+    box-shadow: 0 4px 12px rgba(56, 189, 248, 0.35);
+    display: inline-block;
+    text-align: center;
+}
 
-    .grid-container {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 10px;
-        margin-bottom: 16px;
-    }
+.grid-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 16px;
+}
 
-    .sub-card {
-        background: #FFFFFF;
-        border: 1px solid rgba(226, 232, 240, 0.9);
-        border-radius: 16px;
-        padding: 12px 14px;
-        box-shadow: 0 4px 12px -2px rgba(148, 163, 184, 0.1);
-    }
+.sub-card {
+    background: #FFFFFF;
+    border: 1px solid rgba(226, 232, 240, 0.9);
+    border-radius: 16px;
+    padding: 12px 14px;
+    box-shadow: 0 4px 12px -2px rgba(148, 163, 184, 0.1);
+}
 
-    .sub-card-header {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        margin-bottom: 4px;
-    }
+.sub-card-header {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 4px;
+}
 
-    .sub-icon {
-        font-size: 0.9rem;
-    }
+.sub-icon {
+    font-size: 0.9rem;
+}
 
-    .sub-label {
-        font-size: 0.73rem;
-        color: #64748B;
-        font-weight: 700;
-    }
+.sub-label {
+    font-size: 0.73rem;
+    color: #64748B;
+    font-weight: 700;
+}
 
-    .sub-value {
-        font-size: 1.15rem;
-        font-weight: 900;
-        color: #0F172A;
-    }
+.sub-value {
+    font-size: 1.15rem;
+    font-weight: 900;
+    color: #0F172A;
+}
 
-    .sub-accent {
-        color: #0284C7;
-    }
+.sub-accent {
+    color: #0284C7;
+}
 
-    .stProgress > div > div > div > div {
-        background: linear-gradient(90deg, #38BDF8 0%, #0284C7 100%);
-        border-radius: 10px;
-    }
-    </style>
+.stProgress > div > div > div > div {
+    background: linear-gradient(90deg, #38BDF8 0%, #0284C7 100%);
+    border-radius: 10px;
+}
+</style>
 """, unsafe_allow_html=True)
 
 
@@ -234,15 +237,22 @@ current_weekday = week_days[now.weekday()]
 
 date_text = f"{year}.{month_num}.{current_day:02d} ({current_weekday})"
 
-days_in_month = calendar.monthrange(now.year, now.month)[1]
-remaining_days = max(1, days_in_month - current_day + 1)
+days_in_month = calendar.monthrange(
+    now.year,
+    now.month
+)[1]
+
+remaining_days = max(
+    1,
+    days_in_month - current_day + 1
+)
 
 GOAL_KM = 200.0
 
 
 # =========================================================
-# 5. 데이터 로딩
-#    ※ 캐시를 사용하지 않아 새 기록을 바로 반영
+# 5. Intervals.icu 데이터 로딩
+#    캐시 없음 → 새로고침하면 최신 기록을 다시 가져옴
 # =========================================================
 def fetch_running_data():
 
@@ -254,6 +264,7 @@ def fetch_running_data():
     )
 
     try:
+
         response = requests.get(
             url,
             auth=("API_KEY", API_KEY),
@@ -282,25 +293,26 @@ if activities:
     for act in activities:
 
         # 러닝만 계산
-        if act.get("type") == "Run":
+        if act.get("type") != "Run":
+            continue
 
-            distance_km = round(
-                act.get("distance", 0) / 1000,
-                2
-            )
+        distance_km = round(
+            act.get("distance", 0) / 1000,
+            2
+        )
 
-            start_date_local = act.get(
-                "start_date_local",
-                ""
-            )[:10]
+        start_date_local = act.get(
+            "start_date_local",
+            ""
+        )[:10]
 
-            # 현재 월 기록만 포함
-            if start_date_local.startswith(current_month):
+        # 현재 월 기록만 포함
+        if start_date_local.startswith(current_month):
 
-                running_records.append({
-                    "Date": start_date_local,
-                    "Distance": distance_km
-                })
+            running_records.append({
+                "Date": start_date_local,
+                "Distance": distance_km
+            })
 
 
 df = pd.DataFrame(running_records)
@@ -312,19 +324,20 @@ df = pd.DataFrame(running_records)
 calendar_icon_html = "🗓️"
 
 header_html = """
-    <div class="crew-header">
-        <div class="crew-title">이실권 200CREW</div>
-        <div class="crew-subtitle">
-            <span>{cal_icon}</span> {date_str}
-        </div>
+<div class="crew-header">
+    <div class="crew-title">이실권 200CREW</div>
+    <div class="crew-subtitle">
+        <span>{cal_icon}</span> {date_str}
     </div>
+</div>
 """.format(
     cal_icon=calendar_icon_html,
     date_str=date_text
 )
 
+# dedent → HTML이 코드처럼 보이는 문제 방지
 st.markdown(
-    header_html,
+    textwrap.dedent(header_html),
     unsafe_allow_html=True
 )
 
@@ -335,7 +348,7 @@ st.markdown(
 if not df.empty:
 
     # -----------------------------------------------------
-    # 월간 총 거리 계산
+    # 월간 총 거리
     # -----------------------------------------------------
     total_km = round(
         df["Distance"].sum(),
@@ -375,77 +388,82 @@ if not df.empty:
 
 
     # =====================================================
-    # 마스코트 이미지 출력
+    # 9. 마스코트 이미지
     # =====================================================
     if mascot_base64:
 
         mascot_html = (
             f'<img src="data:image/png;base64,{mascot_base64}" '
-            'style="width: 56px; height: 56px; border-radius: 50%; '
-            'border: 2px solid #38BDF8; object-fit: contain; '
-            'background-color: #FFFFFF; padding: 3px; '
-            'display: block; margin-left: auto;">'
+            'style="width: 56px; height: 56px; '
+            'border-radius: 50%; '
+            'border: 2px solid #38BDF8; '
+            'object-fit: contain; '
+            'background-color: #FFFFFF; '
+            'padding: 3px; '
+            'display: block; '
+            'margin-left: auto;">'
         )
 
     else:
 
         mascot_html = (
             '<span style="font-size: 1.8rem; '
-            'display: block; text-align: right;">🏃💨</span>'
+            'display: block; '
+            'text-align: right;">🏃💨</span>'
         )
 
 
     # =====================================================
-    # 9. 메인 히어로 카드
+    # 10. 메인 히어로 카드
     # =====================================================
     hero_html = """
-        <div class="hero-card">
+<div class="hero-card">
 
-            <!-- 상단: 월간 목표 및 마스코트 -->
-            <div class="hero-top-row">
+    <!-- 상단: 월간 목표 및 마스코트 -->
+    <div class="hero-top-row">
 
-                <div>
-                    <span class="hero-goal-title">
-                        🎯 월간 목표
-                    </span>
+        <div>
+            <span class="hero-goal-title">
+                🎯 월간 목표
+            </span>
 
-                    <span
-                        class="hero-goal-target"
-                        style="margin-left: 8px;"
-                    >
-                        {goal} km
-                    </span>
-                </div>
-
-                <div style="width: 56px;">
-                    {mascot}
-                </div>
-
-            </div>
-
-            <!-- 하단: 현재 누적 거리 및 달성률 -->
-            <div class="hero-bottom-row">
-
-                <div>
-                    <span class="hero-km-highlight">
-                        {total}
-                    </span>
-
-                    <span class="hero-km-label">
-                        km 달성
-                    </span>
-                </div>
-
-                <div>
-                    <div class="hero-percent-tag">
-                        {pct}%
-                    </div>
-                </div>
-
-            </div>
-
+            <span
+                class="hero-goal-target"
+                style="margin-left: 8px;"
+            >
+                {goal} km
+            </span>
         </div>
-    """.format(
+
+        <div style="width: 56px;">
+            {mascot}
+        </div>
+
+    </div>
+
+    <!-- 하단: 현재 누적 거리 및 달성률 -->
+    <div class="hero-bottom-row">
+
+        <div>
+            <span class="hero-km-highlight">
+                {total}
+            </span>
+
+            <span class="hero-km-label">
+                km 달성
+            </span>
+        </div>
+
+        <div>
+            <div class="hero-percent-tag">
+                {pct}%
+            </div>
+        </div>
+
+    </div>
+
+</div>
+""".format(
         mascot=mascot_html,
         total=f"{total_km:.2f}",
         goal=int(GOAL_KM),
@@ -453,13 +471,13 @@ if not df.empty:
     )
 
     st.markdown(
-        hero_html,
+        textwrap.dedent(hero_html),
         unsafe_allow_html=True
     )
 
 
     # =====================================================
-    # 10. 프로그레스 바
+    # 11. 프로그레스 바
     # =====================================================
     st.progress(progress)
 
@@ -471,68 +489,68 @@ if not df.empty:
 
 
     # =====================================================
-    # 11. 서브 카드
+    # 12. 서브 카드
     # =====================================================
     sub_cards_html = """
-    <div class="grid-container">
+<div class="grid-container">
 
-        <div class="sub-card">
+    <div class="sub-card">
 
-            <div class="sub-card-header">
-                <span class="sub-icon">🎯</span>
-                <span class="sub-label">부족분</span>
-            </div>
-
-            <div class="sub-value sub-accent">
-                {rem_km} km
-            </div>
-
+        <div class="sub-card-header">
+            <span class="sub-icon">🎯</span>
+            <span class="sub-label">부족분</span>
         </div>
 
-
-        <div class="sub-card">
-
-            <div class="sub-card-header">
-                <span class="sub-icon">⚡</span>
-                <span class="sub-label">하루 필요</span>
-            </div>
-
-            <div class="sub-value">
-                {daily_km} km
-            </div>
-
-        </div>
-
-
-        <div class="sub-card">
-
-            <div class="sub-card-header">
-                <span class="sub-icon">⏳</span>
-                <span class="sub-label">남은 기간</span>
-            </div>
-
-            <div class="sub-value">
-                {rem_days} 일
-            </div>
-
-        </div>
-
-
-        <div class="sub-card">
-
-            <div class="sub-card-header">
-                <span class="sub-icon">📈</span>
-                <span class="sub-label">월 예상</span>
-            </div>
-
-            <div class="sub-value">
-                {exp_km} km
-            </div>
-
+        <div class="sub-value sub-accent">
+            {rem_km} km
         </div>
 
     </div>
-    """.format(
+
+
+    <div class="sub-card">
+
+        <div class="sub-card-header">
+            <span class="sub-icon">⚡</span>
+            <span class="sub-label">하루 필요</span>
+        </div>
+
+        <div class="sub-value">
+            {daily_km} km
+        </div>
+
+    </div>
+
+
+    <div class="sub-card">
+
+        <div class="sub-card-header">
+            <span class="sub-icon">⏳</span>
+            <span class="sub-label">남은 기간</span>
+        </div>
+
+        <div class="sub-value">
+            {rem_days} 일
+        </div>
+
+    </div>
+
+
+    <div class="sub-card">
+
+        <div class="sub-card-header">
+            <span class="sub-icon">📈</span>
+            <span class="sub-label">월 예상</span>
+        </div>
+
+        <div class="sub-value">
+            {exp_km} km
+        </div>
+
+    </div>
+
+</div>
+""".format(
         rem_km=f"{remaining_km:.2f}",
         daily_km=f"{daily_required_km:.2f}",
         rem_days=remaining_days,
@@ -540,17 +558,19 @@ if not df.empty:
     )
 
     st.markdown(
-        sub_cards_html,
+        textwrap.dedent(sub_cards_html),
         unsafe_allow_html=True
     )
 
 
     # =====================================================
-    # 12. 일별 차트
+    # 13. 일별 차트
     # =====================================================
     st.markdown(
-        "<p style='font-size:0.82rem; font-weight:800; "
-        "color:#334155; margin-bottom:6px;'>"
+        "<p style='font-size:0.82rem; "
+        "font-weight:800; "
+        "color:#334155; "
+        "margin-bottom:6px;'>"
         "📊 일별 참고 기록 (km)"
         "</p>",
         unsafe_allow_html=True
@@ -621,15 +641,15 @@ if not df.empty:
         fig,
         use_container_width=True,
         config={
-            'displayModeBar': False,
-            'scrollZoom': False,
-            'staticPlot': True
+            "displayModeBar": False,
+            "scrollZoom": False,
+            "staticPlot": True
         }
     )
 
 
 # =========================================================
-# 13. 러닝 기록이 없는 경우
+# 14. 러닝 기록이 없는 경우
 # =========================================================
 else:
 
