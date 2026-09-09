@@ -2,10 +2,10 @@ import streamlit as st
 import requests
 import pandas as pd
 import plotly.express as px
-from datetime import datetime, timedelta
+from datetime import datetime
 import calendar
 
-# 1. 페이지 기본 설정 (모바일 최적화 및 상단 여백 최소화)
+# 1. 페이지 기본 설정 (모바일 최적화)
 st.set_page_config(
     page_title="200CREW Dashboard",
     page_icon="🏃",
@@ -13,7 +13,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# 모바일 전용 커스텀 CSS (카드 디자인, 폰트, 여백 최적화)
+# 고급 모바일 UI 디자인 커스텀 CSS (모던 인디고 & 프리미엄 카드)
 st.markdown("""
     <style>
     @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -30,84 +30,101 @@ st.markdown("""
         padding-right: 0.8rem !important;
     }
     
-    /* 헤더 스타일 */
-    .crew-title {
-        font-size: 1.8rem !important;
-        font-weight: 900;
-        letter-spacing: -0.5px;
-        color: #111;
-        margin-bottom: 0px;
-        line-height: 1.1;
-    }
-    .crew-subtitle {
-        font-size: 0.8rem;
-        color: #666;
-        font-weight: 500;
-        margin-bottom: 14px;
-    }
-
-    /* 메인 히어로 카드 (200km 목표 중심) */
-    .hero-card {
-        background: linear-gradient(135deg, #FF4B4B 0%, #FF2E2E 100%);
-        border-radius: 16px;
-        padding: 16px 18px;
-        color: white;
-        box-shadow: 0 4px 12px rgba(255, 75, 75, 0.25);
+    /* 타이틀 헤더 */
+    .crew-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
         margin-bottom: 12px;
     }
-    .hero-label {
-        font-size: 0.8rem;
-        opacity: 0.9;
-        font-weight: 600;
+    .crew-title {
+        font-size: 1.6rem !important;
+        font-weight: 900;
+        letter-spacing: -0.5px;
+        color: #1A1D20;
+        margin: 0;
+        line-height: 1.0;
     }
-    .hero-main {
+    .crew-subtitle {
+        font-size: 0.75rem;
+        color: #6C757D;
+        font-weight: 500;
+    }
+
+    /* 메인 히어로 카드 (고급 다크 스레이트 & 모던 그라데이션) */
+    .hero-card {
+        background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
+        border-radius: 18px;
+        padding: 20px 18px;
+        color: #FFFFFF;
+        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.15);
+        margin-bottom: 14px;
+    }
+    .hero-label {
+        font-size: 0.78rem;
+        color: #94A3B8;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .hero-main-row {
         display: flex;
         align-items: baseline;
         justify-content: space-between;
-        margin: 6px 0 10px 0;
+        margin-top: 6px;
+        margin-bottom: 12px;
     }
-    .hero-percent {
-        font-size: 2.6rem;
+    .hero-km-highlight {
+        font-size: 2.3rem;
         font-weight: 900;
+        color: #38BDF8; /* 세련된 인디고/블루 포인트 */
         line-height: 1;
     }
-    .hero-km {
-        font-size: 1.1rem;
+    .hero-km-total {
+        font-size: 1.2rem;
         font-weight: 600;
-        opacity: 0.95;
+        color: #94A3B8;
+    }
+    .hero-percent-tag {
+        background-color: rgba(56, 189, 248, 0.15);
+        color: #38BDF8;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 700;
     }
 
-    /* 서브 정보 grid */
+    /* 상세 지표 2x2 카드 (차분한 아이보리/그레이 톤) */
     .grid-container {
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 8px;
-        margin-bottom: 12px;
+        margin-bottom: 14px;
     }
     .sub-card {
-        background-color: #F8F9FA;
-        border: 1px solid #E9ECEF;
-        border-radius: 12px;
-        padding: 10px 12px;
+        background-color: #F8FAFC;
+        border: 1px solid #E2E8F0;
+        border-radius: 14px;
+        padding: 12px 14px;
     }
     .sub-label {
         font-size: 0.72rem;
-        color: #6C757D;
+        color: #64748B;
         font-weight: 600;
-        margin-bottom: 2px;
+        margin-bottom: 3px;
     }
     .sub-value {
-        font-size: 1.15rem;
+        font-size: 1.1rem;
         font-weight: 800;
-        color: #212529;
+        color: #0F172A;
     }
-    .sub-highlight {
-        color: #FF4B4B;
+    .sub-accent {
+        color: #0EA5E9;
     }
 
-    /* 프로그레스 바 영역 */
+    /* 프로그레스 바 커스텀 */
     .stProgress > div > div > div > div {
-        background-color: #FF4B4B;
+        background: linear-gradient(90deg, #38BDF8 0%, #0284C7 100%);
         border-radius: 10px;
     }
     </style>
@@ -153,9 +170,13 @@ remaining_days = max(1, days_in_month - current_day + 1)
 
 GOAL_KM = 200.0
 
-# 타이틀 헤더
-st.markdown('<div class="crew-title">🏃 200CREW</div>', unsafe_allow_html=True)
-st.markdown(f'<div class="crew-subtitle">📅 {now.strftime("%Y년 %m월")} 목표 달성 프로젝트</div>', unsafe_allow_html=True)
+# 상단 헤더
+st.markdown(f'''
+    <div class="crew-header">
+        <div class="crew-title">200CREW</div>
+        <div class="crew-subtitle">📅 {now.strftime("%Y.%m")} Target</div>
+    </div>
+''', unsafe_allow_html=True)
 
 if not df.empty:
     total_km = round(df["Distance"].sum(), 1)
@@ -164,19 +185,19 @@ if not df.empty:
     progress = min(1.0, total_km / GOAL_KM)
     percent = round(progress * 100, 1)
     
-    # 일평균 필요 거리 계산
     daily_required_km = round(remaining_km / remaining_days, 1) if remaining_km > 0 else 0.0
-    
-    # 현재 페이스 기준 월 예상 누적 거리
     expected_total_km = round((total_km / current_day) * days_in_month, 1)
 
-    # 1. 메인 200km 히어로 카드
+    # 1. 메인 200km 히어로 카드 (달성도 & 현재 거리 최우선 강조)
     hero_html = f"""
     <div class="hero-card">
-        <div class="hero-label">월간 200km 달성률</div>
-        <div class="hero-main">
-            <div class="hero-percent">{percent}%</div>
-            <div class="hero-km">{total_km} / {int(GOAL_KM)} km</div>
+        <div class="hero-label">CURRENT PROGRESS</div>
+        <div class="hero-main-row">
+            <div>
+                <span class="hero-km-highlight">{total_km}</span>
+                <span class="hero-km-total"> / {int(GOAL_KM)} km</span>
+            </div>
+            <div class="hero-percent-tag">{percent}% 완료</div>
         </div>
     </div>
     """
@@ -184,19 +205,19 @@ if not df.empty:
 
     # 2. 프로그레스 바
     st.progress(progress)
-    st.caption(f"🎯 목표 200km 중 **{total_km}km** 달성 (총 {run_count}회 러닝)")
+    st.caption(f"총 **{run_count}회** 러닝 진행 중")
 
     st.write("")
 
-    # 3. 상세 지표 2x2 카드
+    # 3. 고급스러운 2x2 상세 지표 카드
     sub_cards_html = f"""
     <div class="grid-container">
         <div class="sub-card">
             <div class="sub-label">부족분 (남은 거리)</div>
-            <div class="sub-value sub-highlight">{remaining_km} km</div>
+            <div class="sub-value sub-accent">{remaining_km} km</div>
         </div>
         <div class="sub-card">
-            <div class="sub-label">남은 하루 필요 거리</div>
+            <div class="sub-label">하루 필요 거리</div>
             <div class="sub-value">{daily_required_km} km/일</div>
         </div>
         <div class="sub-card">
@@ -211,10 +232,8 @@ if not df.empty:
     """
     st.markdown(sub_cards_html, unsafe_allow_html=True)
 
-    st.divider()
-
-    # 4. 고정형 소형 참고용 차트 (터치 시 흔들림/확대 방지 설정 적용)
-    st.markdown("<p style='font-size:0.85rem; font-weight:700; color:#333; margin-bottom:4px;'>📊 일별 참고 기록 (km)</p>", unsafe_allow_html=True)
+    # 4. 차분한 톤의 고정형 일별 참고 차트
+    st.markdown("<p style='font-size:0.8rem; font-weight:700; color:#475569; margin-bottom:4px;'>📊 일별 러닝 기록 (km)</p>", unsafe_allow_html=True)
     
     daily_df = df.groupby("Date", as_index=False)["Distance"].sum()
 
@@ -226,25 +245,24 @@ if not df.empty:
     )
     
     fig.update_traces(
-        marker_color="#FF4B4B",
+        marker_color="#64748B", # 차분한 딥 그레이/슬레이트
         textposition="outside",
         cliponaxis=False,
-        hoverinfo="none" # 터치 반응 최소화
+        hoverinfo="none"
     )
     
     fig.update_layout(
         margin=dict(l=0, r=0, t=15, b=0),
-        height=180, # 차트 크기 축소 (컴팩트)
+        height=160,
         xaxis_title=None,
         yaxis_title=None,
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
-        xaxis=dict(fixedrange=True, showgrid=False), # 확대/이동 고정
-        yaxis=dict(fixedrange=True, showgrid=True, gridcolor="#F0F2F6"), # 확대/이동 고정
-        font=dict(size=10)
+        xaxis=dict(fixedrange=True, showgrid=False, tickfont=dict(size=9, color="#94A3B8")),
+        yaxis=dict(fixedrange=True, showgrid=True, gridcolor="#F1F5F9", tickfont=dict(size=9, color="#94A3B8")),
+        font=dict(size=10, color="#64748B")
     )
     
-    # Streamlit 터치/이동 툴바 제거 (static plot 모드)
     st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False, 'staticPlot': True})
 
 else:
