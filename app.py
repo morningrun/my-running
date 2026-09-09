@@ -108,7 +108,7 @@ st.markdown("""
     /* 하단 현재 거리 및 퍼센트 영역 */
     .hero-bottom-row {
         display: flex;
-        align-items: baseline;
+        align-items: center;
         justify-content: space-between;
     }
     .hero-km-highlight {
@@ -131,6 +131,9 @@ st.markdown("""
         font-size: 0.95rem;
         font-weight: 800;
         box-shadow: 0 4px 12px rgba(56, 189, 248, 0.35);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
     }
 
     .grid-container {
@@ -205,8 +208,6 @@ week_days = ['일', '월', '화', '수', '목', '금', '토']
 current_weekday = week_days[now.weekday()]
 date_text = f"{year}.{month_num}.{current_day:02d} ({current_weekday})"
 
-# 날짜에 따른 맞춤형 달력 이모티콘/심볼 연동 매핑 (예: 1~31일에 대응하는 유니코드 또는 동적 뱃지 활용)
-# 유니코드 달력 아이콘(🗓️)과 실시간 날짜 정보를 조합하여 완벽하게 연동
 calendar_icon_html = f"🗓️"
 
 days_in_month = calendar.monthrange(now.year, now.month)[1]
@@ -214,10 +215,10 @@ remaining_days = max(1, days_in_month - current_day + 1)
 
 GOAL_KM = 200.0
 
-# 상단 헤더 출력 (실시간 연동된 날짜/요일 및 달력 아이콘 적용)
+# 상단 헤더 출력
 header_html = """
     <div class="crew-header">
-        <div class="crew-title">이실권 200CREW</div>
+        <div class="crew-title">200CREW</div>
         <div class="crew-subtitle"><span>{cal_icon}</span> {date_str}</div>
     </div>
 """.format(cal_icon=calendar_icon_html, date_str=date_text)
@@ -233,13 +234,13 @@ if not df.empty:
     daily_required_km = round(remaining_km / remaining_days, 1) if remaining_km > 0 else 0.0
     expected_total_km = round((total_km / current_day) * days_in_month, 1)
 
-    # 마스코트 이미지 출력 세팅
+    # 마스코트 이미지 출력 세팅 (flex 정렬 적용을 위한 스타일 보완)
     if mascot_base64:
-        mascot_html = f'<img src="data:image/png;base64,{mascot_base64}" style="width: 56px; height: 56px; border-radius: 50%; border: 2px solid #38BDF8; object-fit: contain; background-color: #FFFFFF; padding: 3px;">'
+        mascot_html = f'<div style="display: flex; align-items: center; justify-content: flex-end;"><img src="data:image/png;base64,{mascot_base64}" style="width: 48px; height: 48px; border-radius: 50%; border: 2px solid #38BDF8; object-fit: contain; background-color: #FFFFFF; padding: 2px;"></div>'
     else:
-        mascot_html = '<span style="font-size: 1.8rem;">🏃💨</span>'
+        mascot_html = '<div style="display: flex; align-items: center; justify-content: flex-end; font-size: 1.6rem;">🏃💨</div>'
 
-    # 1. 메인 히어로 카드
+    # 1. 메인 히어로 카드 (상하단 행 정렬 최적화)
     hero_html = """
         <div class="hero-card">
             <!-- 상단: 월간 목표 및 마스코트 -->
@@ -256,7 +257,9 @@ if not df.empty:
                     <span class="hero-km-highlight">{total}</span>
                     <span class="hero-km-label">km 달성</span>
                 </div>
-                <div class="hero-percent-tag">{pct}%</div>
+                <div>
+                    <div class="hero-percent-tag">{pct}%</div>
+                </div>
             </div>
         </div>
     """.format(
