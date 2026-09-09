@@ -107,13 +107,13 @@ html_code = f"""
     padding: 20px;
     color: #ffffff;
     position: relative;
-    overflow: hidden;
   }}
   .goal-row {{
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
+    padding-right: 50px; 
   }}
   .goal-label-wrapper {{
     display: flex;
@@ -142,12 +142,12 @@ html_code = f"""
     right: 16px;
     width: 44px;
     height: 44px;
-    background-color: #38bdf8;
+    background-color: #ffffff; /* 캐릭터 배경 흰색으로 변경 */
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 2px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
   }}
   .divider {{
     height: 1px;
@@ -220,5 +220,4 @@ html_code = f"""
 </html>
 """
 
-# Streamlit 컴포넌트로 렌더링 (높이 설정으로 깔끔하게 출력)
 components.html(html_code, height=275)
