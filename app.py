@@ -1,337 +1,281 @@
-import streamlit as st
-import requests
-import pandas as pd
-import plotly.express as px
-from datetime import datetime
-import calendar
-import os
-import base64
-
-# 이미지 base64 변환 함수 (마스코트 공용)
-def get_image_base64(path):
-    if os.path.exists(path):
-        with open(path, "rb") as f:
-            data = f.read()
-        return base64.b64encode(data).decode()
-    return None
-
-# 마스코트 이미지 로드
-mascot_base64 = get_image_base64("mascot.png")
-
-# 1. 페이지 기본 설정
-st.set_page_config(
-    page_title="200CREW",
-    page_icon="🏃",
-    layout="centered",
-    initial_sidebar_state="collapsed"
-)
-
-# 2. 화면 스타일 CSS
-st.markdown("""
-    <style>
-    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
-    
-    * {
-        font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif !important;
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>200CREW Dashboard</title>
+  <style>
+    /* 전체 페이지 배경 및 폰트 설정 */
+    body {
+      background-color: #f0f2f5;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
     }
 
-    header {visibility: hidden;}
-    
-    .stApp {
-        background-color: #F8FAFC;
+    /* 전체 카드 컨테이너 */
+    .dashboard-card {
+      background-color: #ffffff;
+      width: 420px;
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
     }
 
-    .block-container {
-        padding-top: 0.8rem !important;
-        padding-bottom: 1.5rem !important;
-        padding-left: 0.8rem !important;
-        padding-right: 0.8rem !important;
+    /* 상단 헤더 영역 (이름 + 날짜 배지) */
+    .header-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
     }
-    
-    .crew-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 14px;
-        padding: 0 4px;
-    }
+
     .crew-title {
-        font-size: 1.5rem !important;
-        font-weight: 900;
-        letter-spacing: -0.5px;
-        color: #0F172A;
-        margin: 0;
-    }
-    .crew-subtitle {
-        font-size: 0.78rem;
-        color: #64748B;
-        font-weight: 600;
-        background: #FFFFFF;
-        border: 1px solid #E2E8F0;
-        padding: 4px 10px;
-        border-radius: 12px;
+      font-size: 22px;
+      font-weight: 800;
+      color: #111827;
+      letter-spacing: -0.5px;
     }
 
-    .hero-card {
-        background: linear-gradient(145deg, #1E293B 0%, #0F172A 100%);
-        border-radius: 22px;
-        padding: 20px 22px;
-        color: #FFFFFF;
-        box-shadow: 0 12px 28px -6px rgba(15, 23, 42, 0.25);
-        margin-bottom: 16px;
+    /* 우측 상단 날짜 및 달력 컴포넌트 배지 */
+    .date-badge {
+      display: flex;
+      align-items: center;
+      background-color: #f3f4f6;
+      padding: 6px 12px;
+      border-radius: 20px;
+      gap: 8px;
     }
 
-    /* 상단 목표 레이블 영역 */
-    .hero-top-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        padding-bottom: 12px;
-        margin-bottom: 14px;
-    }
-    .hero-goal-title {
-        font-size: 0.82rem;
-        color: #94A3B8;
-        font-weight: 700;
-        letter-spacing: 0.5px;
-    }
-    .hero-goal-target {
-        font-size: 1.05rem;
-        color: #38BDF8;
-        font-weight: 900;
+    .calendar-icon {
+      position: relative;
+      width: 24px;
+      height: 24px;
+      background-color: #ef4444; /* 달력 상단 빨간 포인트 바 */
+      border-radius: 4px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
     }
 
-    /* 하단 현재 거리 및 퍼센트 영역 */
-    .hero-bottom-row {
-        display: flex;
-        align-items: baseline;
-        justify-content: space-between;
-    }
-    .hero-km-highlight {
-        font-size: 2.5rem;
-        font-weight: 900;
-        color: #FFFFFF !important;
-        line-height: 1;
-    }
-    .hero-km-label {
-        font-size: 1rem;
-        font-weight: 600;
-        color: #94A3B8 !important;
-        margin-left: 2px;
-    }
-    .hero-percent-tag {
-        background: linear-gradient(135deg, #38BDF8 0%, #0284C7 100%);
-        color: #FFFFFF;
-        padding: 6px 14px;
-        border-radius: 20px;
-        font-size: 0.95rem;
-        font-weight: 800;
-        box-shadow: 0 4px 12px rgba(56, 189, 248, 0.35);
+    .cal-month {
+      font-size: 6px;
+      font-weight: bold;
+      color: #ffffff;
+      text-transform: uppercase;
+      line-height: 1;
+      margin-top: 2px;
     }
 
-    .grid-container {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 10px;
-        margin-bottom: 16px;
+    .cal-day {
+      font-size: 10px;
+      font-weight: 800;
+      color: #1f2937;
+      background-color: #ffffff;
+      width: 100%;
+      text-align: center;
+      flex-grow: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-bottom-left-radius: 4px;
+      border-bottom-right-radius: 4px;
     }
-    .sub-card {
-        background: #FFFFFF;
-        border: 1px solid rgba(226, 232, 240, 0.9);
-        border-radius: 16px;
-        padding: 12px 14px;
-        box-shadow: 0 4px 12px -2px rgba(148, 163, 184, 0.1);
-    }
-    .sub-card-header {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        margin-bottom: 4px;
-    }
-    .sub-icon { font-size: 0.9rem; }
-    .sub-label { font-size: 0.73rem; color: #64748B; font-weight: 700; }
-    .sub-value { font-size: 1.15rem; font-weight: 900; color: #0F172A; }
-    .sub-accent { color: #0284C7; }
 
-    .stProgress > div > div > div > div {
-        background: linear-gradient(90deg, #38BDF8 0%, #0284C7 100%);
-        border-radius: 10px;
+    .date-text {
+      font-size: 12px;
+      font-weight: 600;
+      color: #374151;
+      letter-spacing: -0.3px;
     }
-    </style>
-""", unsafe_allow_html=True)
 
-# 3. Secrets 수집
-API_KEY = st.secrets["INTERVALS_API_KEY"]
-ATHLETE_ID = st.secrets["INTERVALS_ATHLETE_ID"]
+    /* 메인 통계 박스 (어두운 카드) */
+    .stats-card {
+      background-color: #111827;
+      border-radius: 20px;
+      padding: 24px;
+      color: #ffffff;
+      position: relative;
+      overflow: hidden;
+    }
 
-# 4. 데이터 로딩
-@st.cache_data(ttl=300)
-def fetch_running_data():
-    now = datetime.now()
-    start_date = now.strftime("%Y-%m-01")
-    url = f"https://intervals.icu/api/v1/athlete/{ATHLETE_ID}/activities?oldest={start_date}"
+    /* 월간 목표 행 */
+    .goal-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .goal-label-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .target-icon {
+      color: #ef4444;
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    .goal-text {
+      font-size: 16px;
+      font-weight: 600;
+      color: #d1d5db;
+    }
+
+    .goal-value {
+      font-size: 26px;
+      font-weight: 800;
+      color: #38bdf8;
+      letter-spacing: -0.5px;
+    }
+
+    /* 캐릭터 아바타 원형 */
+    .avatar-container {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 52px;
+      height: 52px;
+      background-color: #38bdf8;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .avatar-container img {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    /* 구분선 */
+    .divider {
+      height: 1px;
+      background-color: rgba(255, 255, 255, 0.1);
+      margin-bottom: 24px;
+    }
+
+    /* 하단 달성 현황 행 */
+    .achievement-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+
+    .achieved-km {
+      font-size: 44px;
+      font-weight: 900;
+      letter-spacing: -1px;
+      line-height: 1;
+    }
+
+    .achieved-km span {
+      font-size: 16px;
+      font-weight: 600;
+      color: #9ca3af;
+      margin-left: 4px;
+    }
+
+    .percentage-badge {
+      background-color: #0284c7;
+      color: #ffffff;
+      font-size: 18px;
+      font-weight: 700;
+      padding: 10px 20px;
+      border-radius: 30px;
+      box-shadow: 0 4px 12px rgba(2, 132, 199, 0.4);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="dashboard-card">
     
-    response = requests.get(url, auth=("API_KEY", API_KEY))
-    if response.status_code == 200:
-        return response.json()
-    return []
-
-activities = fetch_running_data()
-
-# 5. 데이터 전처리
-running_records = []
-if activities:
-    for act in activities:
-        if act.get("type") == "Run":
-            distance_km = round(act.get("distance", 0) / 1000, 2)
-            start_date_local = act.get("start_date_local", "")[:10]
-            running_records.append({
-                "Date": start_date_local,
-                "Distance": distance_km
-            })
-
-df = pd.DataFrame(running_records)
-
-# 날짜 및 목표 계산
-now = datetime.now()
-days_in_month = calendar.monthrange(now.year, now.month)[1]
-current_day = now.day
-remaining_days = max(1, days_in_month - current_day + 1)
-
-GOAL_KM = 200.0
-
-# 상단 헤더 출력
-header_html = """
-    <div class="crew-header">
-        <div class="crew-title">이실권 200CREW</div>
-        <div class="crew-subtitle">📅 {date_str}</div>
+    <!-- 상단 헤더 -->
+    <div class="header-container">
+      <div class="crew-title">이실권 200CREW</div>
+      
+      <!-- 실시간 연동되는 우측 상단 달력 및 날짜 표시 -->
+      <div class="date-badge">
+        <div class="calendar-icon">
+          <span class="cal-month" id="calMonth">SEP</span>
+          <span class="cal-day" id="calDay">9</span>
+        </div>
+        <span class="date-text" id="dateText">2026.09.09 (수)</span>
+      </div>
     </div>
-""".format(date_str=now.strftime("%Y.%m"))
-st.markdown(header_html, unsafe_allow_html=True)
 
-if not df.empty:
-    total_km = round(df["Distance"].sum(), 1)
-    run_count = len(df)
-    remaining_km = max(0.0, round(GOAL_KM - total_km, 1))
-    progress = min(1.0, total_km / GOAL_KM)
-    percent = round(progress * 100, 1)
-    
-    daily_required_km = round(remaining_km / remaining_days, 1) if remaining_km > 0 else 0.0
-    expected_total_km = round((total_km / current_day) * days_in_month, 1)
+    <!-- 메인 통계 카드 -->
+    <div class="stats-card">
+      
+      <!-- 아바타 (필요시 이미지 경로 변경 가능) -->
+      <div class="avatar-container">
+        <span style="font-size: 24px;">🏃‍♂️</span>
+      </div>
 
-    # 마스코트 이미지 출력 세팅
-    if mascot_base64:
-        mascot_html = f'<img src="data:image/png;base64,{mascot_base64}" style="width: 56px; height: 56px; border-radius: 50%; border: 2px solid #38BDF8; object-fit: contain; background-color: #FFFFFF; padding: 3px;">'
-    else:
-        mascot_html = '<span style="font-size: 1.8rem;">🏃💨</span>'
-
-    # 1. 메인 히어로 카드
-    hero_html = """
-        <div class="hero-card">
-            <!-- 상단: 월간 목표 및 마스코트 -->
-            <div class="hero-top-row">
-                <div>
-                    <span class="hero-goal-title">🎯 월간 목표</span>
-                    <span class="hero-goal-target" style="margin-left: 8px;">{goal} km</span>
-                </div>
-                <div>{mascot}</div>
-            </div>
-            <!-- 하단: 현재 누적 거리 및 달성률 -->
-            <div class="hero-bottom-row">
-                <div>
-                    <span class="hero-km-highlight">{total}</span>
-                    <span class="hero-km-label">km 달성</span>
-                </div>
-                <div class="hero-percent-tag">{pct}%</div>
-            </div>
+      <!-- 월간 목표 -->
+      <div class="goal-row">
+        <div class="goal-label-wrapper">
+          <span class="target-icon">🎯</span>
+          <span class="goal-text">월간 목표</span>
         </div>
-    """.format(
-        mascot=mascot_html,
-        total=total_km,
-        goal=int(GOAL_KM),
-        pct=percent
-    )
-    st.markdown(hero_html, unsafe_allow_html=True)
+        <div class="goal-value">200 km</div>
+      </div>
 
-    # 2. 프로그레스 바
-    st.progress(progress)
-    st.caption(f"🔥 이번 달 총 {run_count}회 달리셨어요!")
+      <div class="divider"></div>
 
-    st.write("")
+      <!-- 달성 현황 -->
+      <div class="achievement-row">
+        <div class="achieved-km">
+          68.3<span>km 달성</span>
+        </div>
+        <div class="percentage-badge">
+          34.2%
+        </div>
+      </div>
 
-    # 3. 서브 카드 출력
-    sub_cards_html = """
-    <div class="grid-container">
-        <div class="sub-card">
-            <div class="sub-card-header">
-                <span class="sub-icon">🎯</span>
-                <span class="sub-label">부족분</span>
-            </div>
-            <div class="sub-value sub-accent">{rem_km} km</div>
-        </div>
-        <div class="sub-card">
-            <div class="sub-card-header">
-                <span class="sub-icon">⚡</span>
-                <span class="sub-label">하루 필요</span>
-            </div>
-            <div class="sub-value">{daily_km} km</div>
-        </div>
-        <div class="sub-card">
-            <div class="sub-card-header">
-                <span class="sub-icon">⏳</span>
-                <span class="sub-label">남은 기간</span>
-            </div>
-            <div class="sub-value">{rem_days} 일</div>
-        </div>
-        <div class="sub-card">
-            <div class="sub-card-header">
-                <span class="sub-icon">📈</span>
-                <span class="sub-label">월 예상</span>
-            </div>
-            <div class="sub-value">{exp_km} km</div>
-        </div>
     </div>
-    """.format(
-        rem_km=remaining_km,
-        daily_km=daily_required_km,
-        rem_days=remaining_days,
-        exp_km=expected_total_km
-    )
-    st.markdown(sub_cards_html, unsafe_allow_html=True)
 
-    # 4. 차트
-    st.markdown("<p style='font-size:0.82rem; font-weight:800; color:#334155; margin-bottom:6px;'>📊 일별 참고 기록 (km)</p>", unsafe_allow_html=True)
-    
-    daily_df = df.groupby("Date", as_index=False)["Distance"].sum()
+  </div>
 
-    fig = px.bar(
-        daily_df,
-        x="Date",
-        y="Distance",
-        text_auto=".1f"
-    )
-    
-    fig.update_traces(
-        marker_color="#0284C7",
-        textposition="outside",
-        cliponaxis=False,
-        hoverinfo="none"
-    )
-    
-    fig.update_layout(
-        margin=dict(l=0, r=0, t=15, b=0),
-        height=150,
-        xaxis_title=None,
-        yaxis_title=None,
-        plot_bgcolor="rgba(0,0,0,0)",
-        paper_bgcolor="rgba(0,0,0,0)",
-        xaxis=dict(fixedrange=True, showgrid=False, tickfont=dict(size=9, color="#64748B")),
-        yaxis=dict(fixedrange=True, showgrid=True, gridcolor="#E2E8F0", tickfont=dict(size=9, color="#64748B")),
-        font=dict(size=10, color="#475569")
-    )
-    
-    st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False, 'staticPlot': True})
+  <script>
+    // 시스템 날짜를 가져와서 달력 아이콘과 날짜 텍스트를 실시간으로 동기화하는 함수
+    function updateHeaderDate() {
+      const now = new Date(); // 실행되는 시점의 시스템 날짜 (예: 2026년 9월 9일)
+      
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = now.getDate();
+      
+      // 달력 아이콘에 표시할 영문 월 (JAN ~ DEC)
+      const monthNames = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+      const currentMonthStr = monthNames[now.getMonth()];
+      
+      // 요일 표시
+      const weekDays = ['일', '월', '화', '수', '목', '금', '토'];
+      const currentDayOfWeek = weekDays[now.getDay()];
 
-else:
-    st.info("이번 달 등록된 러닝 기록이 없습니다.")
+      // HTML 요소에 값 주입
+      document.getElementById('calMonth').innerText = currentMonthStr;
+      document.getElementById('calDay').innerText = day;
+      document.getElementById('dateText').innerText = `${year}.${month}.${day} (${currentDayOfWeek})`;
+    }
+
+    // 페이지가 로드될 때 실행
+    updateHeaderDate();
+  </script>
+
+</body>
+</html>
