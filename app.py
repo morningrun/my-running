@@ -8,15 +8,11 @@ st.set_page_config(page_title="러닝 대시보드 (200km)", page_icon="🏃", l
 
 st.title("🏃 Running Dashboard")
 
-# 1. Secrets 안전하게 읽기 (대소문자 및 키 명칭 호환성 처리)
-def get_secret(key):
-    if key in st.secrets:
-        return st.secrets[key]
-    # 대소문자 차이나 변수명 차이 대응
-    lower_key = key.lower()
-    for k, v in st.secrets.items():
-        if k.lower() == lower_key:
-            return v
+# 1. Secrets 안전하게 읽기 (대소문자/공백 처리)
+def get_secret(target_key):
+    for key, value in st.secrets.items():
+        if key.strip().lower() == target_key.strip().lower():
+            return value
     return None
 
 api_key = get_secret("INTERVALS_API_KEY")
@@ -36,6 +32,7 @@ def fetch_running_data(api_key, athlete_id):
     url = f"https://intervals.icu/api/v1/athlete/{athlete_id}/activities?oldest={oldest}&newest={newest}"
     
     try:
+        # Intervals.icu는 Basic Auth 아이디 자리에 "API_KEY" 문자를 그대로 사용합니다.
         response = requests.get(url, auth=("API_KEY", api_key), timeout=10)
         if response.status_code == 200:
             return response.json()
