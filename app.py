@@ -220,5 +220,5 @@ html_code = f"""
 </html>
 """
 
-# 컴포넌트 렌더링 높이를 넉넉하게 320으로 수정
-components.html(html_code, height=320)
+# 컴포넌트 렌더링 높이를 넉넉하게 400으로 설정
+components.html(html_code, height=400)
