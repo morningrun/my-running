@@ -15,7 +15,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# 화이트 톤 배경 & 마스코트 2배 키우기 스타일 CSS
+# 화이트 톤 배경 & 마스코트 자동 중앙 정렬 스타일 CSS
 st.markdown("""
     <style>
     @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -83,7 +83,7 @@ st.markdown("""
         letter-spacing: 0.8px;
     }
 
-    /* 동그라미 프레임 고정, 캐릭터 크기 960%로 2배 확대 적용 */
+    /* 동그라미 프레임 및 이미지 중앙 배치 설정 */
     .mascot-frame {
         width: 75px;
         height: 75px;
@@ -100,7 +100,7 @@ st.markdown("""
         width: 960%;
         height: 960%;
         object-fit: cover;
-        object-position: 50% 55%; /* 얼굴 중심 및 아래로 내린 위치 유지 */
+        object-position: 50% 30%; /* 얼굴이 정중앙에 오도록 상단 위주로 맞춤 */
     }
 
     .hero-main-row {
@@ -227,8 +227,8 @@ if not df.empty:
     daily_required_km = round(remaining_km / remaining_days, 1) if remaining_km > 0 else 0.0
     expected_total_km = round((total_km / current_day) * days_in_month, 1)
 
-    # 마스코트 이미지 인코딩
-    mascot_file = "m.png" if os.path.exists("m.png") else ("mascot.png" if os.path.exists("mascot.png") else None)
+    # 지정해주신 mascot.png 파일을 자동으로 불러오도록 설정
+    mascot_file = "mascot.png" if os.path.exists("mascot.png") else ("m.png" if os.path.exists("m.png") else None)
     mascot_b64 = get_image_base64(mascot_file) if mascot_file else None
 
     if mascot_b64:
