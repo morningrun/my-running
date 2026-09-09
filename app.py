@@ -4,6 +4,7 @@ import pandas as pd
 import plotly.express as px
 from datetime import datetime
 import calendar
+import os
 
 # 1. 페이지 기본 설정
 st.set_page_config(
@@ -79,16 +80,6 @@ st.markdown("""
         color: #38BDF8;
         font-weight: 800;
         letter-spacing: 0.8px;
-    }
-    
-    .hero-badge {
-        background: rgba(56, 189, 248, 0.15);
-        border: 1px solid #38BDF8;
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-size: 0.85rem;
-        color: #38BDF8;
-        font-weight: 700;
     }
 
     .hero-main-row {
@@ -207,27 +198,34 @@ if not df.empty:
     daily_required_km = round(remaining_km / remaining_days, 1) if remaining_km > 0 else 0.0
     expected_total_km = round((total_km / current_day) * days_in_month, 1)
 
-    # 1. 메인 히어로 카드 출력 (이미지 대신 깔끔한 뱃지/이모지 사용)
-    hero_html = """
-        <div class="hero-card">
-            <div class="hero-top-row">
-                <div class="hero-label">MONTHLY GOAL</div>
-                <div class="hero-badge">🏃💨 RUNNING CREW</div>
-            </div>
-            <div class="hero-main-row">
+    # 1. 메인 히어로 카드 레이아웃 (컬럼 분할로 이미지 안정적 배치)
+    hero_card_container = st.container()
+    with hero_card_container:
+        st.markdown('<div class="hero-card">', unsafe_allow_html=True)
+        
+        # 카드 내부 상단 행 (라벨과 마스코트 이미지)
+        col_top1, col_top2 = st.columns([4, 1])
+        with col_top1:
+            st.markdown('<div class="hero-label">MONTHLY GOAL</div>', unsafe_allow_html=True)
+        with col_top2:
+            if os.path.exists("mascot.png"):
+                st.image("mascot.png", width=60)
+            else:
+                st.markdown("🏃💨")
+        
+        # 카드 내부 메인 행 (총 거리와 퍼센트)
+        hero_main_html = """
+            <div class="hero-main-row" style="margin-top: 8px;">
                 <div>
                     <span class="hero-km-highlight">{total}</span>
                     <span class="hero-km-total"> / {goal} km</span>
                 </div>
                 <div class="hero-percent-tag">{pct}%</div>
             </div>
-        </div>
-    """.format(
-        total=total_km,
-        goal=int(GOAL_KM),
-        pct=percent
-    )
-    st.markdown(hero_html, unsafe_allow_html=True)
+        """.format(total=total_km, goal=int(GOAL_KM), pct=percent)
+        st.markdown(hero_main_html, unsafe_allow_html=True)
+        
+        st.markdown('</div>', unsafe_allow_html=True)
 
     # 2. 프로그레스 바
     st.progress(progress)
