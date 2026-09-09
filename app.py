@@ -7,7 +7,7 @@ import calendar
 
 # 1. 페이지 기본 설정 (모바일 최적화)
 st.set_page_config(
-    page_title="200CREW Dashboard",
+    page_title="이실권 200CREW Dashboard",
     page_icon="🏃",
     layout="centered",
     initial_sidebar_state="collapsed"
