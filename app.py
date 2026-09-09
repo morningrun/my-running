@@ -8,7 +8,7 @@ import os
 import base64
 
 # 이미지 base64 변환 함수 (마스코트 공용)
-def get_image_base64(path):
+def get_image_base64(path):https://github.com/morningrun/my-running/blob/main/app.py
     if os.path.exists(path):
         with open(path, "rb") as f:
             data = f.read()
