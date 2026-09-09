@@ -15,7 +15,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# 입체적 글래스모피즘 & 마스코트 전용 스타일 CSS
+# 화이트 톤 배경 & 입체 마스코트 스타일 CSS
 st.markdown("""
     <style>
     @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -25,6 +25,12 @@ st.markdown("""
     }
 
     header {visibility: hidden;}
+    
+    /* 전체 배경을 깔끔한 화이트/소프트 톤으로 설정 */
+    .stApp {
+        background-color: #F8FAFC;
+    }
+
     .block-container {
         padding-top: 0.8rem !important;
         padding-bottom: 1.5rem !important;
@@ -51,18 +57,19 @@ st.markdown("""
         font-size: 0.78rem;
         color: #64748B;
         font-weight: 600;
-        background: #F1F5F9;
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
         padding: 4px 10px;
         border-radius: 12px;
     }
 
-    /* 3D 히어로 카드 (마스코트 통합 레이아웃) */
+    /* 3D 히어로 카드 */
     .hero-card {
         background: linear-gradient(145deg, #1E293B 0%, #0F172A 100%);
         border-radius: 22px;
         padding: 20px;
         color: #FFFFFF;
-        box-shadow: 0 12px 28px -6px rgba(15, 23, 42, 0.35);
+        box-shadow: 0 12px 28px -6px rgba(15, 23, 42, 0.25);
         margin-bottom: 16px;
     }
 
@@ -79,15 +86,16 @@ st.markdown("""
         letter-spacing: 0.8px;
     }
 
-    /* 조그만 동그라미 마스코트 프레임 스타일 */
+    /* 마스코트 크기 확대 및 입체 화이트/아쿠아 테두리 효과 */
     .mascot-avatar {
-        width: 70px;
-        height: 70px;
+        width: 90px;
+        height: 90px;
         border-radius: 50%;
-        border: 2.5px solid #38BDF8;
+        border: 3px solid #FFFFFF;
         object-fit: cover;
-        object-position: top center; /* 얼굴과 상체 중심 배치 */
-        box-shadow: 0 4px 12px rgba(56, 189, 248, 0.4);
+        object-position: top center;
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+        background-color: #FFFFFF;
     }
 
     .hero-main-row {
@@ -116,7 +124,7 @@ st.markdown("""
         box-shadow: 0 4px 12px rgba(56, 189, 248, 0.35);
     }
 
-    /* 서브 카드 */
+    /* 서브 카드 (화이트 톤) */
     .grid-container {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -125,10 +133,10 @@ st.markdown("""
     }
     .sub-card {
         background: #FFFFFF;
-        border: 1px solid rgba(226, 232, 240, 0.8);
+        border: 1px solid rgba(226, 232, 240, 0.9);
         border-radius: 16px;
         padding: 12px 14px;
-        box-shadow: 0 6px 16px -4px rgba(148, 163, 184, 0.15);
+        box-shadow: 0 4px 12px -2px rgba(148, 163, 184, 0.1);
     }
     .sub-card-header {
         display: flex;
@@ -189,7 +197,7 @@ remaining_days = max(1, days_in_month - current_day + 1)
 
 GOAL_KM = 200.0
 
-# 이미지를 base64로 인코딩하여 HTML에 내장하는 함수
+# 이미지를 base64로 인코딩하는 함수
 def get_image_base64(file_path):
     if os.path.exists(file_path):
         with open(file_path, "rb") as f:
@@ -219,13 +227,12 @@ if not df.empty:
     mascot_file = "m.png" if os.path.exists("m.png") else ("mascot.png" if os.path.exists("mascot.png") else None)
     mascot_b64 = get_image_base64(mascot_file) if mascot_file else None
 
-    # 마스코트 HTML 요소 생성
     if mascot_b64:
         mascot_html = f'<img src="data:image/png;base64,{mascot_b64}" class="mascot-avatar">'
     else:
-        mascot_html = '<span style="font-size: 2rem;">🏃💨</span>'
+        mascot_html = '<span style="font-size: 2.5rem;">🏃💨</span>'
 
-    # 1. 카드 내부에 조그맣게 마스코트 배치
+    # 1. 메인 히어로 카드 (마스코트 크게 배치)
     hero_html = f'''
         <div class="hero-card">
             <div class="hero-top-row">
@@ -245,77 +252,4 @@ if not df.empty:
 
     # 2. 프로그레스 바
     st.progress(progress)
-    st.caption(f"🔥 이번 달 총 **{run_count}회** 달리셨어요!")
-
-    st.write("")
-
-    # 3. 서브 카드
-    sub_cards_html = f"""
-    <div class="grid-container">
-        <div class="sub-card">
-            <div class="sub-card-header">
-                <span class="sub-icon">🎯</span>
-                <span class="sub-label">부족분</span>
-            </div>
-            <div class="sub-value sub-accent">{remaining_km} km</div>
-        </div>
-        <div class="sub-card">
-            <div class="sub-card-header">
-                <span class="sub-icon">⚡</span>
-                <span class="sub-label">하루 필요</span>
-            </div>
-            <div class="sub-value">{daily_required_km} km</div>
-        </div>
-        <div class="sub-card">
-            <div class="sub-card-header">
-                <span class="sub-icon">⏳</span>
-                <span class="sub-label">남은 기간</span>
-            </div>
-            <div class="sub-value">{remaining_days} 일</div>
-        </div>
-        <div class="sub-card">
-            <div class="sub-card-header">
-                <span class="sub-icon">📈</span>
-                <span class="sub-label">월 예상</span>
-            </div>
-            <div class="sub-value">{expected_total_km} km</div>
-        </div>
-    </div>
-    """
-    st.markdown(sub_cards_html, unsafe_allow_html=True)
-
-    # 4. 차트
-    st.markdown("<p style='font-size:0.82rem; font-weight:800; color:#334155; margin-bottom:6px;'>📊 일별 참고 기록 (km)</p>", unsafe_allow_html=True)
-    
-    daily_df = df.groupby("Date", as_index=False)["Distance"].sum()
-
-    fig = px.bar(
-        daily_df,
-        x="Date",
-        y="Distance",
-        text_auto=".1f"
-    )
-    
-    fig.update_traces(
-        marker_color="#0284C7",
-        textposition="outside",
-        cliponaxis=False,
-        hoverinfo="none"
-    )
-    
-    fig.update_layout(
-        margin=dict(l=0, r=0, t=15, b=0),
-        height=150,
-        xaxis_title=None,
-        yaxis_title=None,
-        plot_bgcolor="rgba(0,0,0,0)",
-        paper_bgcolor="rgba(0,0,0,0)",
-        xaxis=dict(fixedrange=True, showgrid=False, tickfont=dict(size=9, color="#64748B")),
-        yaxis=dict(fixedrange=True, showgrid=True, gridcolor="#F1F5F9", tickfont=dict(size=9, color="#64748B")),
-        font=dict(size=10, color="#475569")
-    )
-    
-    st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False, 'staticPlot': True})
-
-else:
-    st.info("이번 달 등록된 러닝 기록이 없습니다.")
+    st.caption(f"🔥 이번 달 총 **{run_count}회** 달리셨
