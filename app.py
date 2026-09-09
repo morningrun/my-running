@@ -15,7 +15,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# 화이트 톤 배경 & 마스코트 1.5배 확대 및 아래로 내리기 스타일 CSS
+# 화이트 톤 배경 & 마스코트 2배 키우기 스타일 CSS
 st.markdown("""
     <style>
     @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -83,7 +83,7 @@ st.markdown("""
         letter-spacing: 0.8px;
     }
 
-    /* 동그라미 프레임 고정, 캐릭터 1.5배 확대 및 아래로 내리기 */
+    /* 동그라미 프레임 고정, 캐릭터 크기 960%로 2배 확대 적용 */
     .mascot-frame {
         width: 75px;
         height: 75px;
@@ -97,10 +97,10 @@ st.markdown("""
         box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
     }
     .mascot-zoomed-img {
-        width: 480%;
-        height: 480%;
+        width: 960%;
+        height: 960%;
         object-fit: cover;
-        object-position: 50% 55%; /* 아래로 내리고 얼굴 중심으로 위치 조정 */
+        object-position: 50% 55%; /* 얼굴 중심 및 아래로 내린 위치 유지 */
     }
 
     .hero-main-row {
