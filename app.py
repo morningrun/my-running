@@ -1,11 +1,11 @@
-import base64
-import calendar
-from datetime import datetime
-import os
-import plotly.express as px
-import pandas as pd
-import requests
 import streamlit as st
+import requests
+import pandas as pd
+import plotly.express as px
+from datetime import datetime
+import calendar
+import os
+import base64
 
 # 이미지 base64 변환 함수 (마스코트 공용)
 def get_image_base64(path):
@@ -220,11 +220,11 @@ if not df.empty:
     daily_required_km = round(remaining_km / remaining_days, 1) if remaining_km > 0 else 0.0
     expected_total_km = round((total_km / current_day) * days_in_month, 1)
 
-    # 마스코트 이미지 출력 세팅 (크기 균형을 맞추어 38px로 아담하게 조정)
+    # 마스코트 이미지 출력 세팅
     if mascot_base64:
-        mascot_html = f'<img src="data:image/png;base64,{mascot_base64}" style="width: 38px; height: 38px; border-radius: 50%; border: 2px solid #38BDF8; object-fit: contain; background-color: #FFFFFF; padding: 2px;">'
+        mascot_html = f'<img src="data:image/png;base64,{mascot_base64}" style="width: 56px; height: 56px; border-radius: 50%; border: 2px solid #38BDF8; object-fit: contain; background-color: #FFFFFF; padding: 3px;">'
     else:
-        mascot_html = '<span style="font-size: 1.5rem;">🏃💨</span>'
+        mascot_html = '<span style="font-size: 1.8rem;">🏃💨</span>'
 
     # 1. 메인 히어로 카드
     hero_html = """
