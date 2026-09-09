@@ -111,7 +111,7 @@ st.markdown("""
         justify-content: space-between;
     }
     .hero-km-highlight {
-        font-size: 2.5rem;
+        font-size: 2.3rem;
         font-weight: 900;
         color: #FFFFFF !important;
         line-height: 1;
@@ -155,7 +155,7 @@ st.markdown("""
     }
     .sub-icon { font-size: 0.9rem; }
     .sub-label { font-size: 0.73rem; color: #64748B; font-weight: 700; }
-    .sub-value { font-size: 1.15rem; font-weight: 900; color: #0F172A; }
+    .sub-value { font-size: 1.1rem; font-weight: 900; color: #0F172A; }
     .sub-accent { color: #0284C7; }
 
     .stProgress > div > div > div > div {
@@ -173,7 +173,7 @@ ATHLETE_ID = st.secrets["INTERVALS_ATHLETE_ID"]
 KST = ZoneInfo("Asia/Seoul")
 now = datetime.now(KST)
 
-# 4. 데이터 로딩 (한국 시간 기준 이번 달 1일러닝 기록 조회)
+# 4. 데이터 로딩 (한국 시간 기준 이번 달 1일 러닝 기록 조회)
 @st.cache_data(ttl=300)
 def fetch_running_data(start_date_str):
     url = f"https://intervals.icu/api/v1/athlete/{ATHLETE_ID}/activities?oldest={start_date_str}"
@@ -185,7 +185,7 @@ def fetch_running_data(start_date_str):
 start_date = now.strftime("%Y-%m-01")
 activities = fetch_running_data(start_date)
 
-# 5. 데이터 전처리
+# 5. 데이터 전처리 (소수점 둘째 자리까지 정밀 유지)
 running_records = []
 if activities:
     for act in activities:
@@ -224,14 +224,14 @@ header_html = """
 st.markdown(header_html, unsafe_allow_html=True)
 
 if not df.empty:
-    total_km = round(df["Distance"].sum(), 1)
+    total_km = round(df["Distance"].sum(), 2)
     run_count = len(df)
-    remaining_km = max(0.0, round(GOAL_KM - total_km, 1))
+    remaining_km = max(0.0, round(GOAL_KM - total_km, 2))
     progress = min(1.0, total_km / GOAL_KM)
     percent = round(progress * 100, 1)
     
-    daily_required_km = round(remaining_km / remaining_days, 1) if remaining_km > 0 else 0.0
-    expected_total_km = round((total_km / current_day) * days_in_month, 1)
+    daily_required_km = round(remaining_km / remaining_days, 2) if remaining_km > 0 else 0.0
+    expected_total_km = round((total_km / current_day) * days_in_month, 2)
 
     # 마스코트 이미지 출력 세팅
     if mascot_base64:
@@ -253,7 +253,7 @@ if not df.empty:
             <!-- 하단: 현재 누적 거리 및 달성률 -->
             <div class="hero-bottom-row">
                 <div>
-                    <span class="hero-km-highlight">{total}</span>
+                    <span class="hero-km-highlight">{total:.2f}</span>
                     <span class="hero-km-label">km 달성</span>
                 </div>
                 <div>
@@ -275,7 +275,7 @@ if not df.empty:
 
     st.write("")
 
-    # 3. 서브 카드 출력
+    # 3. 서브 카드 출력 (소수점 둘째 자리 적용)
     sub_cards_html = """
     <div class="grid-container">
         <div class="sub-card">
@@ -283,14 +283,14 @@ if not df.empty:
                 <span class="sub-icon">🎯</span>
                 <span class="sub-label">부족분</span>
             </div>
-            <div class="sub-value sub-accent">{rem_km} km</div>
+            <div class="sub-value sub-accent">{rem_km:.2f} km</div>
         </div>
         <div class="sub-card">
             <div class="sub-card-header">
                 <span class="sub-icon">⚡</span>
                 <span class="sub-label">하루 필요</span>
             </div>
-            <div class="sub-value">{daily_km} km</div>
+            <div class="sub-value">{daily_km:.2f} km</div>
         </div>
         <div class="sub-card">
             <div class="sub-card-header">
@@ -304,7 +304,7 @@ if not df.empty:
                 <span class="sub-icon">📈</span>
                 <span class="sub-label">월 예상</span>
             </div>
-            <div class="sub-value">{exp_km} km</div>
+            <div class="sub-value">{exp_km:.2f} km</div>
         </div>
     </div>
     """.format(
@@ -315,7 +315,7 @@ if not df.empty:
     )
     st.markdown(sub_cards_html, unsafe_allow_html=True)
 
-    # 4. 차트
+    # 4. 차트 (소수점 둘째 자리 표시)
     st.markdown("<p style='font-size:0.82rem; font-weight:800; color:#334155; margin-bottom:6px;'>📊 일별 참고 기록 (km)</p>", unsafe_allow_html=True)
     
     daily_df = df.groupby("Date", as_index=False)["Distance"].sum()
@@ -324,7 +324,7 @@ if not df.empty:
         daily_df,
         x="Date",
         y="Distance",
-        text_auto=".1f"
+        text_auto=".2f"
     )
     
     fig.update_traces(
