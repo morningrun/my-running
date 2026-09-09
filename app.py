@@ -104,29 +104,6 @@ st.markdown("""
         box-shadow: 0 4px 12px rgba(56, 189, 248, 0.35);
     }
 
-    /* 마스코트 이미지 전용 세련된 동그란 입체 프레임 */
-    .mascot-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100%;
-    }
-    .mascot-frame {
-        width: 85px;
-        height: 85px;
-        border-radius: 50%;
-        border: 3px solid #38BDF8;
-        box-shadow: 0 6px 16px rgba(56, 189, 248, 0.3);
-        overflow: hidden;
-        background-color: #0F172A;
-    }
-    .mascot-frame img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        object-position: top center;
-    }
-
     /* 서브 카드 */
     .grid-container {
         display: grid;
@@ -218,8 +195,8 @@ if not df.empty:
     daily_required_km = round(remaining_km / remaining_days, 1) if remaining_km > 0 else 0.0
     expected_total_km = round((total_km / current_day) * days_in_month, 1)
 
-    # 1. 메인 히어로 카드 + 마스코트 엠블럼 동시 출력
-    col_text, col_img = st.columns([2.3, 1])
+    # 1. 메인 히어로 카드 + 마스코트 이미지 출력
+    col_text, col_img = st.columns([2.2, 1])
     
     with col_text:
         st.markdown(f'''
@@ -238,18 +215,9 @@ if not df.empty:
         ''', unsafe_allow_html=True)
 
     with col_img:
-        # m.png 또는 mascot.png 확인 후 표시
         mascot_file = "m.png" if os.path.exists("m.png") else ("mascot.png" if os.path.exists("mascot.png") else None)
         
         if mascot_file:
-            st.markdown(f'''
-                <div class="mascot-container">
-                    <div class="mascot-frame">
-                        <img src="app/static/{mascot_file}" onerror="this.onerror=null; this.src='https://raw.githubusercontent.com/{ATHLETE_ID}/my-running/main/{mascot_file}';">
-                    </div>
-                </div>
-            ''', unsafe_allow_html=True)
-            # 만약 위 방법으로 로드가 안 될 경우 기본 이미지 표시 백업
             st.image(mascot_file, use_container_width=True)
         else:
             st.write("🏃💨")
