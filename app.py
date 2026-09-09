@@ -4,6 +4,7 @@ import pandas as pd
 import plotly.express as px
 from datetime import datetime
 import calendar
+import os
 
 # 1. 페이지 기본 설정
 st.set_page_config(
@@ -13,7 +14,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# 입체적 글래스모피즘 & 마스코트 스타일 CSS
+# 입체적 글래스모피즘 & 마스코트 전용 스타일 CSS
 st.markdown("""
     <style>
     @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -44,9 +45,6 @@ st.markdown("""
         letter-spacing: -0.5px;
         color: #0F172A;
         margin: 0;
-        display: flex;
-        align-items: center;
-        gap: 6px;
     }
     .crew-subtitle {
         font-size: 0.78rem;
@@ -57,7 +55,7 @@ st.markdown("""
         border-radius: 12px;
     }
 
-    /* 3D 히어로 카드 (마스코트 포함) */
+    /* 3D 히어로 카드 */
     .hero-card {
         background: linear-gradient(145deg, #1E293B 0%, #0F172A 100%);
         border-radius: 22px;
@@ -65,14 +63,13 @@ st.markdown("""
         color: #FFFFFF;
         box-shadow: 0 12px 28px -6px rgba(15, 23, 42, 0.35);
         margin-bottom: 16px;
-        position: relative;
-        overflow: hidden;
     }
 
-    .hero-top {
+    .hero-top-row {
         display: flex;
         justify-content: space-between;
         align-items: center;
+        margin-bottom: 8px;
     }
     .hero-label {
         font-size: 0.8rem;
@@ -80,32 +77,20 @@ st.markdown("""
         font-weight: 800;
         letter-spacing: 0.8px;
     }
-    
-    /* 마스코트 이미지 크기 및 둥근 스타일 */
-    .mascot-img {
-        width: 65px;
-        height: 65px;
-        border-radius: 50%;
-        border: 2px solid #38BDF8;
-        object-fit: cover;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-    }
 
     .hero-main-row {
         display: flex;
         align-items: baseline;
         justify-content: space-between;
-        margin-top: 10px;
-        margin-bottom: 8px;
     }
     .hero-km-highlight {
-        font-size: 2.5rem;
+        font-size: 2.3rem;
         font-weight: 900;
         color: #FFFFFF;
         line-height: 1;
     }
     .hero-km-total {
-        font-size: 1.2rem;
+        font-size: 1.1rem;
         font-weight: 600;
         color: #94A3B8;
     }
@@ -117,6 +102,29 @@ st.markdown("""
         font-size: 0.9rem;
         font-weight: 800;
         box-shadow: 0 4px 12px rgba(56, 189, 248, 0.35);
+    }
+
+    /* 마스코트 이미지 전용 세련된 동그란 입체 프레임 */
+    .mascot-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100%;
+    }
+    .mascot-frame {
+        width: 85px;
+        height: 85px;
+        border-radius: 50%;
+        border: 3px solid #38BDF8;
+        box-shadow: 0 6px 16px rgba(56, 189, 248, 0.3);
+        overflow: hidden;
+        background-color: #0F172A;
+    }
+    .mascot-frame img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: top center;
     }
 
     /* 서브 카드 */
@@ -210,29 +218,43 @@ if not df.empty:
     daily_required_km = round(remaining_km / remaining_days, 1) if remaining_km > 0 else 0.0
     expected_total_km = round((total_km / current_day) * days_in_month, 1)
 
-    # 마스코트 이미지 파일명이 mascot.png 가 아닐 경우 아래 파일 경로를 바꿔주세요
-    mascot_path = "mascot.png"
-
-    # 메인 카드 (마스코트 배치)
-    col_text, col_img = st.columns([3, 1])
+    # 1. 메인 히어로 카드 + 마스코트 엠블럼 동시 출력
+    col_text, col_img = st.columns([2.3, 1])
     
-    hero_html = f"""
-    <div class="hero-card">
-        <div class="hero-top">
-            <div class="hero-label">MONTHLY GOAL</div>
-        </div>
-        <div class="hero-main-row">
-            <div>
-                <span class="hero-km-highlight">{total_km}</span>
-                <span class="hero-km-total"> / {int(GOAL_KM)} km</span>
+    with col_text:
+        st.markdown(f'''
+            <div class="hero-card">
+                <div class="hero-top-row">
+                    <div class="hero-label">MONTHLY GOAL</div>
+                </div>
+                <div class="hero-main-row">
+                    <div>
+                        <span class="hero-km-highlight">{total_km}</span>
+                        <span class="hero-km-total"> / {int(GOAL_KM)} km</span>
+                    </div>
+                    <div class="hero-percent-tag">{percent}%</div>
+                </div>
             </div>
-            <div class="hero-percent-tag">{percent}%</div>
-        </div>
-    </div>
-    """
-    st.markdown(hero_html, unsafe_allow_html=True)
+        ''', unsafe_allow_html=True)
 
-    # 2. 입체 프로그레스 바
+    with col_img:
+        # m.png 또는 mascot.png 확인 후 표시
+        mascot_file = "m.png" if os.path.exists("m.png") else ("mascot.png" if os.path.exists("mascot.png") else None)
+        
+        if mascot_file:
+            st.markdown(f'''
+                <div class="mascot-container">
+                    <div class="mascot-frame">
+                        <img src="app/static/{mascot_file}" onerror="this.onerror=null; this.src='https://raw.githubusercontent.com/{ATHLETE_ID}/my-running/main/{mascot_file}';">
+                    </div>
+                </div>
+            ''', unsafe_allow_html=True)
+            # 만약 위 방법으로 로드가 안 될 경우 기본 이미지 표시 백업
+            st.image(mascot_file, use_container_width=True)
+        else:
+            st.write("🏃💨")
+
+    # 2. 프로그레스 바
     st.progress(progress)
     st.caption(f"🔥 이번 달 총 **{run_count}회** 달리셨어요!")
 
@@ -253,4 +275,58 @@ if not df.empty:
                 <span class="sub-icon">⚡</span>
                 <span class="sub-label">하루 필요</span>
             </div>
-            <div
+            <div class="sub-value">{daily_required_km} km</div>
+        </div>
+        <div class="sub-card">
+            <div class="sub-card-header">
+                <span class="sub-icon">⏳</span>
+                <span class="sub-label">남은 기간</span>
+            </div>
+            <div class="sub-value">{remaining_days} 일</div>
+        </div>
+        <div class="sub-card">
+            <div class="sub-card-header">
+                <span class="sub-icon">📈</span>
+                <span class="sub-label">월 예상</span>
+            </div>
+            <div class="sub-value">{expected_total_km} km</div>
+        </div>
+    </div>
+    """
+    st.markdown(sub_cards_html, unsafe_allow_html=True)
+
+    # 4. 차트
+    st.markdown("<p style='font-size:0.82rem; font-weight:800; color:#334155; margin-bottom:6px;'>📊 일별 참고 기록 (km)</p>", unsafe_allow_html=True)
+    
+    daily_df = df.groupby("Date", as_index=False)["Distance"].sum()
+
+    fig = px.bar(
+        daily_df,
+        x="Date",
+        y="Distance",
+        text_auto=".1f"
+    )
+    
+    fig.update_traces(
+        marker_color="#0284C7",
+        textposition="outside",
+        cliponaxis=False,
+        hoverinfo="none"
+    )
+    
+    fig.update_layout(
+        margin=dict(l=0, r=0, t=15, b=0),
+        height=150,
+        xaxis_title=None,
+        yaxis_title=None,
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+        xaxis=dict(fixedrange=True, showgrid=False, tickfont=dict(size=9, color="#64748B")),
+        yaxis=dict(fixedrange=True, showgrid=True, gridcolor="#F1F5F9", tickfont=dict(size=9, color="#64748B")),
+        font=dict(size=10, color="#475569")
+    )
+    
+    st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False, 'staticPlot': True})
+
+else:
+    st.info("이번 달 등록된 러닝 기록이 없습니다.")
