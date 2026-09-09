@@ -1,33 +1,23 @@
 from datetime import datetime
 import streamlit as st
 
-# 오늘 날짜 및 요일 자동 계산 (실시간 연동)
+# 페이지 설정 (레이아웃이 넓게 퍼지지 않도록 중앙 정렬)
+st.set_page_config(page_title="200CREW Dashboard", layout="centered")
+
+# 오늘 날짜 및 요일 자동 계산
 now = datetime.now()
-year = now.strftime('%Y')
-month_num = now.strftime('%m')
+year = now.strftime("%Y")
+month_num = now.strftime("%m")
 
 # 영문 월 표시 (JAN ~ DEC)
-month_names = [
-    'JAN',
-    'FEB',
-    'MAR',
-    'APR',
-    'MAY',
-    'JUN',
-    'JUL',
-    'AUG',
-    'SEP',
-    'OCT',
-    'NOV',
-    'DEC',
-]
+month_names = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"]
 current_month_str = month_names[now.month - 1]
 current_day = now.day
 
 # 요일 매핑
 week_days = ['일', '월', '화', '수', '목', '금', '토']
 current_weekday = week_days[now.weekday()]
-date_text = f'{year}.{month_num}.{current_day:02d} ({current_weekday})'
+date_text = f"{year}.{month_num}.{current_day:02d} ({current_weekday})"
 
 # HTML 및 CSS 스타일 정의
 html_code = f"""
@@ -41,6 +31,7 @@ html_code = f"""
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
     margin: 0 auto;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    box-sizing: border-box;
   }}
   .header-container {{
     display: flex;
