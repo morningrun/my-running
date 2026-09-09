@@ -20,7 +20,7 @@ mascot_base64 = get_image_base64("mascot.png")
 
 # 1. 페이지 기본 설정
 st.set_page_config(
-    page_title="200CREW",
+    page_title="이실권 200CREW",
     page_icon="🏃",
     layout="centered",
     initial_sidebar_state="collapsed"
@@ -56,7 +56,7 @@ st.markdown("""
         padding: 0 4px;
     }
     .crew-title {
-        font-size: 1.5rem !important;
+        font-size: 1.4rem !important;
         font-weight: 900;
         letter-spacing: -0.5px;
         color: #0F172A;
@@ -214,10 +214,10 @@ remaining_days = max(1, days_in_month - current_day + 1)
 
 GOAL_KM = 200.0
 
-# 상단 헤더 출력
+# 상단 헤더 출력 (이실권 200CREW 명시)
 header_html = """
     <div class="crew-header">
-        <div class="crew-title">200CREW</div>
+        <div class="crew-title">이실권 200CREW</div>
         <div class="crew-subtitle"><span>{cal_icon}</span> {date_str}</div>
     </div>
 """.format(cal_icon=calendar_icon_html, date_str=date_text)
@@ -233,13 +233,13 @@ if not df.empty:
     daily_required_km = round(remaining_km / remaining_days, 1) if remaining_km > 0 else 0.0
     expected_total_km = round((total_km / current_day) * days_in_month, 1)
 
-    # 마스코트 이미지 출력 세팅 (크기 및 우측 정렬 세팅 완벽 일치)
+    # 마스코트 이미지 출력 세팅
     if mascot_base64:
         mascot_html = f'<img src="data:image/png;base64,{mascot_base64}" style="width: 56px; height: 56px; border-radius: 50%; border: 2px solid #38BDF8; object-fit: contain; background-color: #FFFFFF; padding: 3px; display: block; margin-left: auto;">'
     else:
         mascot_html = '<span style="font-size: 1.8rem; display: block; text-align: right;">🏃💨</span>'
 
-    # 1. 메인 히어로 카드 (상하단 우측 라인 완벽 일치)
+    # 1. 메인 히어로 카드
     hero_html = """
         <div class="hero-card">
             <!-- 상단: 월간 목표 및 마스코트 -->
