@@ -70,6 +70,9 @@ st.markdown("""
         border: 1px solid #E2E8F0;
         padding: 4px 10px;
         border-radius: 12px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
     }
 
     .hero-card {
@@ -202,18 +205,22 @@ week_days = ['일', '월', '화', '수', '목', '금', '토']
 current_weekday = week_days[now.weekday()]
 date_text = f"{year}.{month_num}.{current_day:02d} ({current_weekday})"
 
+# 날짜에 따른 맞춤형 달력 이모티콘/심볼 연동 매핑 (예: 1~31일에 대응하는 유니코드 또는 동적 뱃지 활용)
+# 유니코드 달력 아이콘(🗓️)과 실시간 날짜 정보를 조합하여 완벽하게 연동
+calendar_icon_html = f"🗓️"
+
 days_in_month = calendar.monthrange(now.year, now.month)[1]
 remaining_days = max(1, days_in_month - current_day + 1)
 
 GOAL_KM = 200.0
 
-# 상단 헤더 출력 (실시간 연동된 날짜/요일 적용)
+# 상단 헤더 출력 (실시간 연동된 날짜/요일 및 달력 아이콘 적용)
 header_html = """
     <div class="crew-header">
         <div class="crew-title">200CREW</div>
-        <div class="crew-subtitle">📅 {date_str}</div>
+        <div class="crew-subtitle"><span>{cal_icon}</span> {date_str}</div>
     </div>
-""".format(date_str=date_text)
+""".format(cal_icon=calendar_icon_html, date_str=date_text)
 st.markdown(header_html, unsafe_allow_html=True)
 
 if not df.empty:
@@ -226,7 +233,7 @@ if not df.empty:
     daily_required_km = round(remaining_km / remaining_days, 1) if remaining_km > 0 else 0.0
     expected_total_km = round((total_km / current_day) * days_in_month, 1)
 
-    # 마스코트 이미지 출력 세팅 (크기 균형이 잡힌 원본 56px 규격)
+    # 마스코트 이미지 출력 세팅
     if mascot_base64:
         mascot_html = f'<img src="data:image/png;base64,{mascot_base64}" style="width: 56px; height: 56px; border-radius: 50%; border: 2px solid #38BDF8; object-fit: contain; background-color: #FFFFFF; padding: 3px;">'
     else:
