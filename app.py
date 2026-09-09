@@ -198,12 +198,12 @@ if activities:
 
 df = pd.DataFrame(running_records)
 
-# 실시간 시스템 시간 및 요일 연동 계산
+# 실시간 시스템 시간 및 요일 연동 계산 (월요일=0 기준 올바른 요일 매핑)
 now = datetime.now()
 year = now.strftime("%Y")
 month_num = now.strftime("%m")
 current_day = now.day
-week_days = ['일', '월', '화', '수', '목', '금', '토']
+week_days = ['월', '화', '수', '목', '금', '토', '일']
 current_weekday = week_days[now.weekday()]
 date_text = f"{year}.{month_num}.{current_day:02d} ({current_weekday})"
 
