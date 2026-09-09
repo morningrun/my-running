@@ -64,7 +64,7 @@ st.markdown("""
     .hero-card {
         background: linear-gradient(145deg, #1E293B 0%, #0F172A 100%);
         border-radius: 22px;
-        padding: 20px;
+        padding: 22px 20px;
         color: #FFFFFF;
         box-shadow: 0 12px 28px -6px rgba(15, 23, 42, 0.25);
         margin-bottom: 16px;
@@ -73,24 +73,23 @@ st.markdown("""
     .hero-top-flex {
         display: flex;
         justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 12px;
+        align-items: center;
+        margin-bottom: 10px;
     }
     .hero-label {
-        font-size: 0.8rem;
+        font-size: 0.85rem;
         color: #38BDF8;
         font-weight: 800;
         letter-spacing: 0.8px;
-        margin-bottom: 4px;
     }
     .hero-km-highlight {
-        font-size: 2.3rem;
+        font-size: 2.5rem;
         font-weight: 900;
         color: #FFFFFF !important;
         line-height: 1;
     }
     .hero-km-total {
-        font-size: 1.1rem;
+        font-size: 1.15rem;
         font-weight: 600;
         color: #94A3B8 !important;
     }
@@ -99,7 +98,7 @@ st.markdown("""
         color: #FFFFFF;
         padding: 6px 14px;
         border-radius: 20px;
-        font-size: 0.9rem;
+        font-size: 0.95rem;
         font-weight: 800;
         box-shadow: 0 4px 12px rgba(56, 189, 248, 0.35);
     }
@@ -209,22 +208,18 @@ if not df.empty:
 
     img_base64 = get_image_base64("mascot.png")
     
-    # 동그라미 안의 배경을 흰색(#FFFFFF)으로 변경
+    # 동그라미 크기를 60px로 조정하고 화이트 배경 적용
     if img_base64:
-        mascot_html = f'<img src="data:image/png;base64,{img_base64}" style="width: 78px; height: 78px; border-radius: 50%; border: 2.5px solid #38BDF8; object-fit: contain; background-color: #FFFFFF; padding: 4px;">'
+        mascot_html = f'<img src="data:image/png;base64,{img_base64}" style="width: 60px; height: 60px; border-radius: 50%; border: 2.5px solid #38BDF8; object-fit: contain; background-color: #FFFFFF; padding: 3px;">'
     else:
-        mascot_html = '<span style="font-size: 2.5rem;">🏃💨</span>'
+        mascot_html = '<span style="font-size: 2rem;">🏃💨</span>'
 
     # 1. 메인 히어로 카드 출력
     hero_html = """
         <div class="hero-card">
             <div class="hero-top-flex">
-                <div>
-                    <div class="hero-label">MONTHLY GOAL</div>
-                </div>
-                <div>
-                    {mascot}
-                </div>
+                <div class="hero-label">MONTHLY GOAL</div>
+                <div>{mascot}</div>
             </div>
             <div class="hero-main-row">
                 <div>
