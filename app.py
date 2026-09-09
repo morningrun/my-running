@@ -64,23 +64,38 @@ st.markdown("""
     .hero-card {
         background: linear-gradient(145deg, #1E293B 0%, #0F172A 100%);
         border-radius: 22px;
-        padding: 22px 20px;
+        padding: 20px 22px;
         color: #FFFFFF;
         box-shadow: 0 12px 28px -6px rgba(15, 23, 42, 0.25);
         margin-bottom: 16px;
     }
 
-    .hero-top-flex {
+    /* 상단 목표 레이블 영역 */
+    .hero-top-row {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 10px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        padding-bottom: 12px;
+        margin-bottom: 14px;
     }
-    .hero-label {
-        font-size: 0.8rem;
+    .hero-goal-title {
+        font-size: 0.82rem;
+        color: #94A3B8;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+    }
+    .hero-goal-target {
+        font-size: 1.05rem;
         color: #38BDF8;
-        font-weight: 800;
-        letter-spacing: 0.8px;
+        font-weight: 900;
+    }
+
+    /* 하단 현재 거리 및 퍼센트 영역 */
+    .hero-bottom-row {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
     }
     .hero-km-highlight {
         font-size: 2.5rem;
@@ -88,10 +103,11 @@ st.markdown("""
         color: #FFFFFF !important;
         line-height: 1;
     }
-    .hero-km-total {
-        font-size: 1.15rem;
+    .hero-km-label {
+        font-size: 1rem;
         font-weight: 600;
         color: #94A3B8 !important;
+        margin-left: 2px;
     }
     .hero-percent-tag {
         background: linear-gradient(135deg, #38BDF8 0%, #0284C7 100%);
@@ -101,11 +117,6 @@ st.markdown("""
         font-size: 0.95rem;
         font-weight: 800;
         box-shadow: 0 4px 12px rgba(56, 189, 248, 0.35);
-    }
-    .hero-main-row {
-        display: flex;
-        align-items: baseline;
-        justify-content: space-between;
     }
 
     .grid-container {
@@ -209,21 +220,26 @@ if not df.empty:
     img_base64 = get_image_base64("mascot.png")
     
     if img_base64:
-        mascot_html = f'<img src="data:image/png;base64,{img_base64}" style="width: 60px; height: 60px; border-radius: 50%; border: 2.5px solid #38BDF8; object-fit: contain; background-color: #FFFFFF; padding: 3px;">'
+        mascot_html = f'<img src="data:image/png;base64,{img_base64}" style="width: 56px; height: 56px; border-radius: 50%; border: 2px solid #38BDF8; object-fit: contain; background-color: #FFFFFF; padding: 3px;">'
     else:
-        mascot_html = '<span style="font-size: 2rem;">🏃💨</span>'
+        mascot_html = '<span style="font-size: 1.8rem;">🏃💨</span>'
 
-    # 1. 메인 히어로 카드 출력 (구조 정돈 완료)
+    # 1. 메인 히어로 카드 (상단 목표 / 하단 현재 거리로 완벽 분리)
     hero_html = """
         <div class="hero-card">
-            <div class="hero-top-flex">
-                <div class="hero-label">MONTHLY GOAL</div>
+            <!-- 상단: 월간 목표 및 마스코트 -->
+            <div class="hero-top-row">
+                <div>
+                    <span class="hero-goal-title">🎯 월간 목표</span>
+                    <span class="hero-goal-target" style="margin-left: 8px;">{goal} km</span>
+                </div>
                 <div>{mascot}</div>
             </div>
-            <div class="hero-main-row">
+            <!-- 하단: 현재 누적 거리 및 달성률 -->
+            <div class="hero-bottom-row">
                 <div>
                     <span class="hero-km-highlight">{total}</span>
-                    <span class="hero-km-total"> / {goal} km</span>
+                    <span class="hero-km-label">km 달성</span>
                 </div>
                 <div class="hero-percent-tag">{pct}%</div>
             </div>
