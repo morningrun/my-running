@@ -77,7 +77,7 @@ st.markdown("""
         margin-bottom: 10px;
     }
     .hero-label {
-        font-size: 0.85rem;
+        font-size: 0.8rem;
         color: #38BDF8;
         font-weight: 800;
         letter-spacing: 0.8px;
@@ -208,13 +208,12 @@ if not df.empty:
 
     img_base64 = get_image_base64("mascot.png")
     
-    # 동그라미 크기를 60px로 조정하고 화이트 배경 적용
     if img_base64:
         mascot_html = f'<img src="data:image/png;base64,{img_base64}" style="width: 60px; height: 60px; border-radius: 50%; border: 2.5px solid #38BDF8; object-fit: contain; background-color: #FFFFFF; padding: 3px;">'
     else:
         mascot_html = '<span style="font-size: 2rem;">🏃💨</span>'
 
-    # 1. 메인 히어로 카드 출력
+    # 1. 메인 히어로 카드 출력 (구조 정돈 완료)
     hero_html = """
         <div class="hero-card">
             <div class="hero-top-flex">
