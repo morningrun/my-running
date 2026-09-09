@@ -160,11 +160,20 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 3. Secrets 수집
+# 3. 사이드바에 마스코트 업로더 생성
+with st.sidebar:
+    st.markdown("### ⚙️ 설정")
+    uploaded_mascot = st.file_uploader("마스코트 이미지 업로드 (png/jpg)", type=["png", "jpg", "jpeg"])
+    if uploaded_mascot is not None:
+        with open("mascot.png", "wb") as f:
+            f.write(uploaded_mascot.getbuffer())
+        st.success("마스코트가 저장되었습니다!")
+
+# 4. Secrets 수집
 API_KEY = st.secrets["INTERVALS_API_KEY"]
 ATHLETE_ID = st.secrets["INTERVALS_ATHLETE_ID"]
 
-# 4. 데이터 로딩
+# 5. 데이터 로딩
 @st.cache_data(ttl=300)
 def fetch_running_data():
     now = datetime.now()
@@ -178,7 +187,7 @@ def fetch_running_data():
 
 activities = fetch_running_data()
 
-# 5. 데이터 전처리
+# 6. 데이터 전처리
 running_records = []
 if activities:
     for act in activities:
@@ -227,8 +236,12 @@ if not df.empty:
     daily_required_km = round(remaining_km / remaining_days, 1) if remaining_km > 0 else 0.0
     expected_total_km = round((total_km / current_day) * days_in_month, 1)
 
-    # mascot.png 파일 로드
-    mascot_b64 = get_image_base64("mascot.png")
+    # 업로드된 파일이 있으면 우선 사용, 없으면 서버 폴더의 mascot.png 탐색
+    if uploaded_mascot is not None:
+        mascot_b64 = base64.b64encode(uploaded_mascot.getvalue()).decode()
+    else:
+        mascot_file = "mascot.png" if os.path.exists("mascot.png") else None
+        mascot_b64 = get_image_base64(mascot_file) if mascot_file else None
 
     if mascot_b64:
         mascot_html = f'''
