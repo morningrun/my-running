@@ -209,9 +209,9 @@ if not df.empty:
 
     img_base64 = get_image_base64("mascot.png")
     
-    # 크기를 기존 52px에서 1.5배인 78px로 키우고 파란 테두리 적용
+    # object-fit을 contain으로 바꾸고 배경색을 주어 캐릭터 전체가 여유 있게 들어오도록 수정
     if img_base64:
-        mascot_html = f'<img src="data:image/png;base64,{img_base64}" style="width: 78px; height: 78px; border-radius: 50%; border: 2.5px solid #38BDF8; object-fit: cover;">'
+        mascot_html = f'<img src="data:image/png;base64,{img_base64}" style="width: 78px; height: 78px; border-radius: 50%; border: 2.5px solid #38BDF8; object-fit: contain; background-color: #0F172A; padding: 4px;">'
     else:
         mascot_html = '<span style="font-size: 2.5rem;">🏃💨</span>'
 
