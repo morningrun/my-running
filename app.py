@@ -288,7 +288,7 @@ if not df.empty:
         <div class="sub-card">
             <div class="sub-card-header">
                 <span class="sub-icon">⚡</span>
-                <span class="sub-label">평균 하루 운동 거리</span>
+                <span class="sub-label">예상 하루 운동 거리</span>
             </div>
             <div class="sub-value">{daily_km:.2f} km</div>
         </div>
