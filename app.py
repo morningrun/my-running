@@ -131,9 +131,8 @@ st.markdown("""
         font-size: 0.95rem;
         font-weight: 800;
         box-shadow: 0 4px 12px rgba(56, 189, 248, 0.35);
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
+        display: inline-block;
+        text-align: center;
     }
 
     .grid-container {
@@ -234,13 +233,13 @@ if not df.empty:
     daily_required_km = round(remaining_km / remaining_days, 1) if remaining_km > 0 else 0.0
     expected_total_km = round((total_km / current_day) * days_in_month, 1)
 
-    # 마스코트 이미지 출력 세팅 (flex 정렬 적용을 위한 스타일 보완)
+    # 마스코트 이미지 출력 세팅 (크기 및 우측 정렬 세팅 완벽 일치)
     if mascot_base64:
-        mascot_html = f'<div style="display: flex; align-items: center; justify-content: flex-end;"><img src="data:image/png;base64,{mascot_base64}" style="width: 48px; height: 48px; border-radius: 50%; border: 2px solid #38BDF8; object-fit: contain; background-color: #FFFFFF; padding: 2px;"></div>'
+        mascot_html = f'<img src="data:image/png;base64,{mascot_base64}" style="width: 56px; height: 56px; border-radius: 50%; border: 2px solid #38BDF8; object-fit: contain; background-color: #FFFFFF; padding: 3px; display: block; margin-left: auto;">'
     else:
-        mascot_html = '<div style="display: flex; align-items: center; justify-content: flex-end; font-size: 1.6rem;">🏃💨</div>'
+        mascot_html = '<span style="font-size: 1.8rem; display: block; text-align: right;">🏃💨</span>'
 
-    # 1. 메인 히어로 카드 (상하단 행 정렬 최적화)
+    # 1. 메인 히어로 카드 (상하단 우측 라인 완벽 일치)
     hero_html = """
         <div class="hero-card">
             <!-- 상단: 월간 목표 및 마스코트 -->
@@ -249,7 +248,7 @@ if not df.empty:
                     <span class="hero-goal-title">🎯 월간 목표</span>
                     <span class="hero-goal-target" style="margin-left: 8px;">{goal} km</span>
                 </div>
-                <div>{mascot}</div>
+                <div style="width: 56px;">{mascot}</div>
             </div>
             <!-- 하단: 현재 누적 거리 및 달성률 -->
             <div class="hero-bottom-row">
