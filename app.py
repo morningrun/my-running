@@ -1,9 +1,9 @@
-import base6s
+import base64
 from datetime import datetime
 import streamlit as st
 import streamlit.components.v1 as components
 
-# 오늘 날짜 및 요일 자동 계산 (현재 날짜 기준 연동)
+# 오늘 날짜 및 요일 자동 계산 (실시간 연동)
 now = datetime.now()
 year = now.strftime("%Y")
 month_num = now.strftime("%m")
@@ -18,13 +18,13 @@ week_days = ['일', '월', '화', '수', '목', '금', '토']
 current_weekday = week_days[now.weekday()]
 date_text = f"{year}.{month_num}.{current_day:02d} ({current_weekday})"
 
-# local mascot.png 파일을 읽어서 base64로 인코딩 (이미지 깨짐 방지)
+# local mascot.png 파일을 읽어서 base64로 인코딩
 try:
     with open("mascot.png", "rb") as img_file:
         encoded_img = base64.b64encode(img_file.read()).decode("utf-8")
         avatar_src = f"data:image/png;base64,{encoded_img}"
 except FileNotFoundError:
-    avatar_src = ""  # 파일이 없을 경우의 예외 처리
+    avatar_src = ""  # 파일이 없을 경우 빈 값 처리
 
 # 독립된 HTML/CSS 컴포넌트 코드
 html_code = f"""
