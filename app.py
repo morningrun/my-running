@@ -26,7 +26,7 @@ st.markdown("""
 
     header {visibility: hidden;}
     
-    /* 전체 배경을 깔끔한 화이트/소프트 톤으로 설정 */
+    /* 전체 배경 화이트 톤 */
     .stApp {
         background-color: #F8FAFC;
     }
@@ -86,7 +86,7 @@ st.markdown("""
         letter-spacing: 0.8px;
     }
 
-    /* 마스코트 크기 확대 및 입체 화이트/아쿠아 테두리 효과 */
+    /* 마스코트 스타일 (화이트 톤 대비 강조) */
     .mascot-avatar {
         width: 90px;
         height: 90px;
@@ -124,7 +124,7 @@ st.markdown("""
         box-shadow: 0 4px 12px rgba(56, 189, 248, 0.35);
     }
 
-    /* 서브 카드 (화이트 톤) */
+    /* 서브 카드 */
     .grid-container {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -232,7 +232,7 @@ if not df.empty:
     else:
         mascot_html = '<span style="font-size: 2.5rem;">🏃💨</span>'
 
-    # 1. 메인 히어로 카드 (마스코트 크게 배치)
+    # 1. 메인 히어로 카드
     hero_html = f'''
         <div class="hero-card">
             <div class="hero-top-row">
@@ -252,4 +252,77 @@ if not df.empty:
 
     # 2. 프로그레스 바
     st.progress(progress)
-    st.caption(f"🔥 이번 달 총 **{run_count}회** 달리셨
+    st.caption(f"🔥 이번 달 총 {run_count}회 달리셨어요!")
+
+    st.write("")
+
+    # 3. 서브 카드
+    sub_cards_html = f"""
+    <div class="grid-container">
+        <div class="sub-card">
+            <div class="sub-card-header">
+                <span class="sub-icon">🎯</span>
+                <span class="sub-label">부족분</span>
+            </div>
+            <div class="sub-value sub-accent">{remaining_km} km</div>
+        </div>
+        <div class="sub-card">
+            <div class="sub-card-header">
+                <span class="sub-icon">⚡</span>
+                <span class="sub-label">하루 필요</span>
+            </div>
+            <div class="sub-value">{daily_required_km} km</div>
+        </div>
+        <div class="sub-card">
+            <div class="sub-card-header">
+                <span class="sub-icon">⏳</span>
+                <span class="sub-label">남은 기간</span>
+            </div>
+            <div class="sub-value">{remaining_days} 일</div>
+        </div>
+        <div class="sub-card">
+            <div class="sub-card-header">
+                <span class="sub-icon">📈</span>
+                <span class="sub-label">월 예상</span>
+            </div>
+            <div class="sub-value">{expected_total_km} km</div>
+        </div>
+    </div>
+    """
+    st.markdown(sub_cards_html, unsafe_allow_html=True)
+
+    # 4. 차트
+    st.markdown("<p style='font-size:0.82rem; font-weight:800; color:#334155; margin-bottom:6px;'>📊 일별 참고 기록 (km)</p>", unsafe_allow_html=True)
+    
+    daily_df = df.groupby("Date", as_index=False)["Distance"].sum()
+
+    fig = px.bar(
+        daily_df,
+        x="Date",
+        y="Distance",
+        text_auto=".1f"
+    )
+    
+    fig.update_traces(
+        marker_color="#0284C7",
+        textposition="outside",
+        cliponaxis=False,
+        hoverinfo="none"
+    )
+    
+    fig.update_layout(
+        margin=dict(l=0, r=0, t=15, b=0),
+        height=150,
+        xaxis_title=None,
+        yaxis_title=None,
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+        xaxis=dict(fixedrange=True, showgrid=False, tickfont=dict(size=9, color="#64748B")),
+        yaxis=dict(fixedrange=True, showgrid=True, gridcolor="#E2E8F0", tickfont=dict(size=9, color="#64748B")),
+        font=dict(size=10, color="#475569")
+    )
+    
+    st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False, 'staticPlot': True})
+
+else:
+    st.info("이번 달 등록된 러닝 기록이 없습니다.")
