@@ -179,7 +179,7 @@ ATHLETE_ID = st.secrets["INTERVALS_ATHLETE_ID"]
 KST = ZoneInfo("Asia/Seoul")
 now = datetime.now(KST)
 
-# 4. 데이터 로딩 (올해 1월 1일 이후 전체 데이터 조회)
+# 4. 데이터 로딩 (넉넉히 작년 동기부터 전체 데이터 조회)
 @st.cache_data(ttl=300)
 def fetch_running_data(start_date_str):
     url = f"https://intervals.icu/api/v1/athlete/{ATHLETE_ID}/activities?oldest={start_date_str}"
@@ -188,8 +188,9 @@ def fetch_running_data(start_date_str):
         return response.json()
     return []
 
-current_year_start = f"{now.strftime('%Y')}-01-01"
-activities = fetch_running_data(current_year_start)
+# 12개월 이상 충분한 데이터를 가져오기 위해 2년 전부터 조회
+past_year_start = f"{now.year - 2}-01-01"
+activities = fetch_running_data(past_year_start)
 
 # 5. 데이터 전처리
 running_records = []
@@ -370,10 +371,10 @@ st.plotly_chart(fig_curr, use_container_width=True, key="chart_current_month", c
 
 
 # ==========================================
-# 5. 전체 월별 현황 한눈에 보기 섹션
+# 5. 최근 12개월 월별 현황 한눈에 보기 섹션
 # ==========================================
 st.markdown("<hr style='margin: 30px 0 20px 0; border: none; border-top: 1px solid #E2E8F0;'>", unsafe_allow_html=True)
-st.markdown("<p style='font-size:1.1rem; font-weight:900; color:#0F172A; margin-bottom:12px;'>📈 전체 월별 운동 현황 비교</p>", unsafe_allow_html=True)
+st.markdown("<p style='font-size:1.1rem; font-weight:900; color:#0F172A; margin-bottom:12px;'>📈 최근 12개월 운동 현황 비교</p>", unsafe_allow_html=True)
 
 if not df_all.empty:
     monthly_summary = df_all.groupby("Month", as_index=False).agg(
@@ -381,7 +382,9 @@ if not df_all.empty:
         Run_Count=("Distance", "count")
     )
     monthly_summary["Total_Distance"] = monthly_summary["Total_Distance"].round(2)
-    monthly_summary = monthly_summary.sort_values("Month")
+    
+    # 최신 월 기준 내림차순 정렬 후 최근 12개월만 추출, 차트 표출을 위해 다시 오름차순 정렬
+    monthly_summary = monthly_summary.sort_values("Month", ascending=False).head(12).sort_values("Month")
 
     fig_all_months = px.bar(
         monthly_summary,
@@ -410,7 +413,7 @@ if not df_all.empty:
     st.plotly_chart(fig_all_months, use_container_width=True, key="chart_all_months", config={'displayModeBar': False, 'scrollZoom': False, 'staticPlot': True})
 
     st.write("")
-    st.markdown("<p style='font-size:0.85rem; font-weight:800; color:#334155; margin-bottom:6px;'>📋 월별 상세 기록 요약</p>", unsafe_allow_html=True)
+    st.markdown("<p style='font-size:0.85rem; font-weight:800; color:#334155; margin-bottom:6px;'>📋 최근 12개월 상세 기록 요약</p>", unsafe_allow_html=True)
     
     display_df = monthly_summary.rename(columns={
         "Month": "조회 월",
@@ -427,7 +430,7 @@ if not df_all.empty:
 
     st.write("")
     st.markdown("<p style='font-size:0.85rem; font-weight:800; color:#334155; margin-bottom:6px;'>🔍 특정 월 상세 일별 그래프 보기</p>", unsafe_allow_html=True)
-    available_months = sorted(df_all["Month"].unique(), reverse=True)
+    available_months = sorted(display_df["조회 월"].unique(), reverse=True)
     
     selected_month = st.selectbox("확인할 월 선택", available_months, index=0, label_visibility="collapsed", key="select_target_month")
     
