@@ -337,7 +337,7 @@ st.markdown(sub_cards_html, unsafe_allow_html=True)
 
 # 4. 이번 달 일별 차트
 current_month_title_str = f"📊 {now.month}월 일별 운동 거리 (km)"
-st.markdown(f"<p style='font-size:0.82rem; font-weight:800; color:#334155; margin-bottom:6px;'>{current_month_title_str}</p>", unsafe_allow_html=True)
+st.markdown(f"<p style='font-size:1.1rem; font-weight:900; color:#0F172A; margin-bottom:12px;'>{current_month_title_str}</p>", unsafe_allow_html=True)
 
 _, last_day = calendar.monthrange(now.year, now.month)
 all_dates_current = [f"{now.year}-{now.month:02d}-{day:02d}" for day in range(1, last_day + 1)]
@@ -454,7 +454,7 @@ if not df_all.empty:
     st.plotly_chart(fig_all_months, use_container_width=True, key="chart_all_months", config={'displayModeBar': False, 'scrollZoom': False, 'staticPlot': True})
 
     st.write("")
-    st.markdown("<p style='font-size:0.85rem; font-weight:800; color:#334155; margin-bottom:6px;'>📋 월별 현황 요약</p>", unsafe_allow_html=True)
+    st.markdown("<p style='font-size:1.1rem; font-weight:900; color:#0F172A; margin-bottom:12px;'>📋 월별 현황 요약</p>", unsafe_allow_html=True)
     
     display_df = monthly_summary_full.rename(columns={
         "Month_Label": "조회 월",
