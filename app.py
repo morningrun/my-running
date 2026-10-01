@@ -454,7 +454,7 @@ if not df_all.empty:
     st.plotly_chart(fig_all_months, use_container_width=True, key="chart_all_months", config={'displayModeBar': False, 'scrollZoom': False, 'staticPlot': True})
 
     st.write("")
-    st.markdown("<p style='font-size:0.85rem; font-weight:800; color:#334155; margin-bottom:6px;'>📋 전체 월별 상세 기록 요약</p>", unsafe_allow_html=True)
+    st.markdown("<p style='font-size:0.85rem; font-weight:800; color:#334155; margin-bottom:6px;'>📋 월별 현황 요약</p>", unsafe_allow_html=True)
     
     display_df = monthly_summary_full.rename(columns={
         "Month_Label": "조회 월",
