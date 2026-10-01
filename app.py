@@ -390,6 +390,11 @@ if not df_all.empty:
     # [그래프용] 최근 12개월만 추출
     monthly_summary_12m = monthly_summary_full.sort_values("Month", ascending=False).head(12).sort_values("Month")
 
+    # 200km 초과 여부에 따른 막대 색상 분기 처리 (초과: 진한 오렌지/골드 계열 #F97316, 미만: 기본 블루 #0ea5e9)
+    monthly_summary_12m["Color"] = monthly_summary_12m["Total_Distance"].apply(
+        lambda x: "#F97316" if x >= GOAL_KM else "#0ea5e9"
+    )
+
     st.markdown("<p style='font-size:1.1rem; font-weight:900; color:#0F172A; margin-bottom:12px;'>📈 최근 12개월 운동 현황 비교</p>", unsafe_allow_html=True)
 
     fig_all_months = px.bar(
@@ -397,19 +402,33 @@ if not df_all.empty:
         x="Month",
         y="Total_Distance",
         text="Total_Distance",
-        text_auto=".2f"
+        text_auto=".2f",
+        color="Color",
+        color_discrete_map="identity"  # 지정한 색상 코드를 그대로 사용
     )
     fig_all_months.update_traces(
-        marker_color="#0ea5e9",
         textposition="outside",
         cliponaxis=False,
         hoverinfo="none"
     )
+    
+    # 200km 기준선(점선) 추가 및 레이아웃 정리
+    fig_all_months.add_hline(
+        y=GOAL_KM, 
+        line_dash="dash", 
+        line_color="#EF4444", 
+        line_width=1.5,
+        annotation_text="목표 200km", 
+        annotation_position="top right",
+        annotation_font=dict(size=9, color="#EF4444", family="Pretendard")
+    )
+
     fig_all_months.update_layout(
         margin=dict(l=0, r=0, t=25, b=0),
-        height=180,
+        height=185,
         xaxis_title=None,
         yaxis_title=None,
+        showlegend=False,
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
         xaxis=dict(fixedrange=True, showgrid=False, tickfont=dict(size=9, color="#64748B")),
