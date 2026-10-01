@@ -27,7 +27,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# 2. 화면 스타일 CSS
+# 2. 화면 스타일 CSS (표 가운데 정렬 스타일 포함)
 st.markdown("""
     <style>
     @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -169,6 +169,34 @@ st.markdown("""
     .stProgress > div > div > div > div {
         background: linear-gradient(90deg, #38BDF8 0%, #0284C7 100%);
         border-radius: 10px;
+    }
+
+    /* 커스텀 테이블 스타일 (가운데 정렬) */
+    .custom-table {
+        width: 100%;
+        border-collapse: collapse;
+        background-color: #FFFFFF;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid #E2E8F0;
+        font-size: 0.9rem;
+    }
+    .custom-table th {
+        background-color: #F1F5F9;
+        color: #0F172A;
+        font-weight: 700;
+        text-align: center;
+        padding: 10px;
+        border-bottom: 1px solid #E2E8F0;
+    }
+    .custom-table td {
+        text-align: center;
+        padding: 10px;
+        color: #334155;
+        border-bottom: 1px solid #F1F5F9;
+    }
+    .custom-table tr:last-child td {
+        border-bottom: none;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -468,7 +496,7 @@ if not df_all.empty:
     st.write("")
     st.markdown("<p style='font-size:1.1rem; font-weight:900; color:#0F172A; margin-bottom:12px;'>📋 월별 현황 요약</p>", unsafe_allow_html=True)
     
-    # 💡 핵심 수정: 총 거리 컬럼을 소수점 둘째 자리 문자열로 포맷팅하여 뒤에 00이 붙지 않도록 처리
+    # 데이터 준비 및 포맷팅
     display_df = monthly_summary_full.sort_values("Month_DT", ascending=False).copy()
     display_df["총 거리 (km)"] = display_df["Total_Distance"].apply(lambda x: f"{x:.2f}")
     display_df["목표 달성률"] = (display_df["Total_Distance"] / GOAL_KM * 100).round(1).astype(str) + "%"
@@ -478,8 +506,21 @@ if not df_all.empty:
         "Run_Count": "러닝 횟수"
     })[["조회 월", "총 거리 (km)", "러닝 횟수", "목표 달성률"]].reset_index(drop=True)
     
-    # 고정형 표(st.table) 사용
-    st.table(display_df)
+    # HTML 테이블로 변환하여 가운데 정렬 적용
+    table_html = "<table class='custom-table'>"
+    table_html += "<thead><tr>"
+    for col in display_df.columns:
+        table_html += f"<th>{col}</th>"
+    table_html += "</tr></thead><tbody>"
+    
+    for _, row in display_df.iterrows():
+        table_html += "<tr>"
+        for val in row:
+            table_html += f"<td>{val}</td>"
+        table_html += "</tr>"
+    table_html += "</tbody></table>"
+    
+    st.markdown(table_html, unsafe_allow_html=True)
 
 else:
     st.info("조회 가능한 러닝 기록이 없습니다.")
