@@ -285,12 +285,12 @@ hero_html = """
 )
 st.markdown(hero_html, unsafe_allow_html=True)
 
-# 2. 프로그레스 바
+# 2. 프로그레스 바 및 진하게 바뀐 안내 문구
 st.progress(min(1.0, progress))
 if progress > 1.0:
-    st.caption(f"🔥 목표 달성 완료! 현재 {percent}% 달성 중 (총 {run_count}회)")
+    st.markdown(f"<p style='font-size:0.85rem; font-weight:800; color:#0F172A; margin-top:4px;'>🔥 목표 달성 완료! 현재 {percent}% 달성 중 (총 {run_count}회)</p>", unsafe_allow_html=True)
 else:
-    st.caption(f"🔥 이번 달 총 {run_count}회 달리셨어요!")
+    st.markdown(f"<p style='font-size:0.85rem; font-weight:800; color:#0F172A; margin-top:4px;'>🔥 이번 달 총 {run_count}회 달리셨어요!</p>", unsafe_allow_html=True)
 st.write("")
 
 # 3. 서브 카드 출력
@@ -390,7 +390,6 @@ if not df_all.empty:
         text="Total_Distance",
         text_auto=".2f"
     )
-    # 그래프 색상을 너무 진하지 않은 부드러운 파란색 계열(#0ea5e9)로 변경
     fig_all_months.update_traces(
         marker_color="#0ea5e9",
         textposition="outside",
@@ -421,7 +420,7 @@ if not df_all.empty:
     
     display_df["목표 달성률"] = (display_df["총 거리 (km)"] / GOAL_KM * 100).round(1).astype(str) + "%"
     
-    # [수정] '조회 월'이 가장 먼저 오도록 컬럼 순서 재배치
+    # '조회 월'이 가장 먼저 오도록 컬럼 순서 재배치
     display_df = display_df[["조회 월", "총 거리 (km)", "러닝 횟수", "목표 달성률"]]
     
     st.dataframe(display_df, use_container_width=True, hide_index=True)
