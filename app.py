@@ -354,19 +354,15 @@ merged_current["Date_Label"] = [str(int(d.split("-")[2])) for d in merged_curren
 
 fig_curr = px.bar(merged_current, x="Date_Label", y="Distance")
 fig_curr.update_traces(
-    text=[f"{v:.2f}" if v > 0 else "" for v in merged_current["Distance"]],
-    texttemplate="%{text}",
-    textposition="outside",
     marker_color="#0284C7",
     cliponaxis=False,
-    hoverinfo="none",
-    textfont=dict(size=10, color="#0F172A", family="Pretendard", weight="bold")
+    hoverinfo="x+y"
 )
 
 tick_vals_list = [str(d) for d in range(1, last_day + 1) if (d - 1) % 3 == 0 or d == last_day]
 
 fig_curr.update_layout(
-    margin=dict(l=0, r=0, t=35, b=0),
+    margin=dict(l=0, r=0, t=15, b=0),
     height=180,
     xaxis_title=None,
     yaxis_title=None,
@@ -421,17 +417,13 @@ if not df_all.empty:
     fig_all_months = px.bar(
         monthly_summary_12m,
         x="Month_Label",
-        y="Total_Distance",
-        text=monthly_summary_12m["Total_Distance"].apply(lambda v: f"{v:.2f}")
+        y="Total_Distance"
     )
     
     fig_all_months.update_traces(
-        texttemplate="%{text}",
         marker_color=monthly_summary_12m["Color"],
-        textposition="outside",
         cliponaxis=False,
-        hoverinfo="none",
-        textfont=dict(size=10, color="#0F172A", family="Pretendard", weight="bold")
+        hoverinfo="x+y"
     )
     
     fig_all_months.add_hline(
@@ -442,8 +434,8 @@ if not df_all.empty:
     )
 
     fig_all_months.update_layout(
-        margin=dict(l=15, r=15, t=45, b=0),
-        height=220,
+        margin=dict(l=15, r=15, t=25, b=0),
+        height=200,
         xaxis_title=None,
         yaxis_title=None,
         showlegend=False,
