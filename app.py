@@ -162,6 +162,9 @@ st.markdown("""
     .sub-icon { font-size: 0.9rem; }
     .sub-label { font-size: 0.73rem; color: #64748B; font-weight: 700; }
     .sub-value { font-size: 1.1rem; font-weight: 900; color: #0F172A; }
+    
+    /* 남은 거리 전용 강조 클래스 (크기 확대) */
+    .sub-value-large { font-size: 1.45rem !important; font-weight: 900; }
     .sub-accent { color: #0284C7; }
 
     .stProgress > div > div > div > div {
@@ -294,7 +297,7 @@ else:
     st.markdown(f"<p style='font-size:0.85rem; font-weight:800; color:#0F172A; margin-top:4px;'>🔥 이번 달 총 {run_count}회 달리셨어요!</p>", unsafe_allow_html=True)
 st.write("")
 
-# 3. 서브 카드 출력
+# 3. 서브 카드 출력 ('남은 거리' 글씨 크기 키움 적용)
 sub_cards_html = """
 <div class="grid-container">
     <div class="sub-card">
@@ -302,7 +305,7 @@ sub_cards_html = """
             <span class="sub-icon">🎯</span>
             <span class="sub-label">남은 거리</span>
         </div>
-        <div class="sub-value sub-accent">{rem_km:.2f} km</div>
+        <div class="sub-value sub-value-large sub-accent">{rem_km:.2f} km</div>
     </div>
     <div class="sub-card">
         <div class="sub-card-header">
