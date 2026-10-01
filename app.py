@@ -424,12 +424,13 @@ if not df_all.empty:
         text=monthly_summary_12m["Total_Distance"].apply(lambda v: f"{v:.2f}")
     )
     
+    # 텍스트가 잘리지 않고 항상 일정한 크기(11pt)로 모든 막대에 표시되도록 고정
     fig_all_months.update_traces(
         marker_color=monthly_summary_12m["Color"],
         textposition="outside",
         cliponaxis=False,
         hoverinfo="none",
-        textfont=dict(size=14, color="#0F172A", family="Pretendard", weight="bold")
+        textfont=dict(size=11, color="#0F172A", family="Pretendard", weight="bold")
     )
     
     fig_all_months.add_hline(
@@ -440,15 +441,15 @@ if not df_all.empty:
     )
 
     fig_all_months.update_layout(
-        margin=dict(l=0, r=0, t=35, b=0),
-        height=205,
+        margin=dict(l=10, r=10, t=45, b=0),  # 상단 여백을 살짝 넓혀서 글씨가 잘리지 않게 조정
+        height=210,
         xaxis_title=None,
         yaxis_title=None,
         showlegend=False,
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
         xaxis=dict(fixedrange=True, showgrid=False, tickfont=dict(size=10, color="#64748B")),
-        yaxis=dict(fixedrange=True, showgrid=True, gridcolor="#E2E8F0", tickfont=dict(size=10, color="#64748B")),
+        yaxis=dict(fixedrange=True, showgrid=True, gridcolor="#E2E8F0", tickfont=dict(size=10, color="#64748B"), rangemode="tozero"),
         font=dict(size=10, color="#475569")
     )
     st.plotly_chart(fig_all_months, use_container_width=True, key="chart_all_months", config={'displayModeBar': False, 'scrollZoom': False, 'staticPlot': True})
