@@ -431,32 +431,25 @@ if not df_all.empty:
     st.dataframe(display_df, use_container_width=True, hide_index=True)
 
     st.write("")
-    st.markdown("<p style='font-size:0.85rem; font-weight:800; color:#334155; margin-bottom:6px;'>🔍 특정 월 상세 일별 그래프 보기</p>", unsafe_allow_html=True)
+    st.markdown("<p style='font-size:0.85rem; font-weight:800; color:#334155; margin-bottom:6px;'>📊 전체 월별 그래프</p>", unsafe_allow_html=True)
     
-    # 전체 기간 내에서 선택 가능하도록 구성
-    available_months = sorted(display_df["조회 월"].unique(), reverse=True)
-    selected_month = st.selectbox("확인할 월 선택", available_months, index=0, label_visibility="collapsed", key="select_target_month")
-    
-    df_selected = df_all[df_all["Month"] == selected_month]
-    sel_year, sel_mon = map(int, selected_month.split("-"))
-    _, sel_last_day = calendar.monthrange(sel_year, sel_mon)
-    
-    all_dates_sel = [f"{sel_year}-{sel_mon:02d}-{day:02d}" for day in range(1, sel_last_day + 1)]
-    full_dates_df_sel = pd.DataFrame({"Date": all_dates_sel})
-    daily_df_sel = df_selected.groupby("Date", as_index=False)["Distance"].sum()
-    merged_sel = pd.merge(full_dates_df_sel, daily_df_sel, on="Date", how="left").fillna(0)
-    
-    fig_sel = px.bar(merged_sel, x="Date", y="Distance", text_auto=".2f")
-    fig_sel.update_traces(
+    # 전체 기간 데이터를 대상으로 하는 월별 막대 그래프 생성
+    fig_monthly_all = px.bar(
+        monthly_summary_full,
+        x="Month",
+        y="Total_Distance",
+        text="Total_Distance",
+        text_auto=".2f"
+    )
+    fig_monthly_all.update_traces(
         marker_color="#0284C7",
         textposition="outside",
         cliponaxis=False,
         hoverinfo="none"
     )
-    fig_sel.for_each_trace(lambda t: t.update(text=[v if v > 0 else "" for v in t.y]))
-    fig_sel.update_layout(
+    fig_monthly_all.update_layout(
         margin=dict(l=0, r=0, t=25, b=0),
-        height=160,
+        height=200,
         xaxis_title=None,
         yaxis_title=None,
         plot_bgcolor="rgba(0,0,0,0)",
@@ -465,7 +458,7 @@ if not df_all.empty:
         yaxis=dict(fixedrange=True, showgrid=True, gridcolor="#E2E8F0", tickfont=dict(size=9, color="#64748B")),
         font=dict(size=10, color="#475569")
     )
-    st.plotly_chart(fig_sel, use_container_width=True, key="chart_selected_month_detail", config={'displayModeBar': False, 'scrollZoom': False, 'staticPlot': True})
+    st.plotly_chart(fig_monthly_all, use_container_width=True, key="chart_monthly_all_history", config={'displayModeBar': False, 'scrollZoom': False, 'staticPlot': True})
 
 else:
     st.info("조회 가능한 러닝 기록이 없습니다.")
