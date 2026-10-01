@@ -350,8 +350,8 @@ else:
     merged_current = full_dates_df_current
     merged_current["Distance"] = 0.0
 
-# X축 표시용 '월/일' 형식 (예: 10/1, 10/2 ...) 컬럼 생성
-merged_current["Date_Label"] = pd.to_datetime(merged_current["Date"]).dt.strftime(f"{now.month}/%-d")
+# X축 표시용 '일(Day)' 숫자만 추출 (예: 1, 2, 3 ...)
+merged_current["Date_Label"] = pd.to_datetime(merged_current["Date"]).dt.day.astype(str)
 
 fig_curr = px.bar(merged_current, x="Date_Label", y="Distance")
 fig_curr.update_traces(
