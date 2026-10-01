@@ -163,7 +163,6 @@ st.markdown("""
     .sub-label { font-size: 0.73rem; color: #64748B; font-weight: 700; }
     .sub-value { font-size: 1.1rem; font-weight: 900; color: #0F172A; }
     
-    /* 남은 거리 전용 강조 클래스 (크기 확대) */
     .sub-value-large { font-size: 1.45rem !important; font-weight: 900; }
     .sub-accent { color: #0284C7; }
 
@@ -182,7 +181,7 @@ ATHLETE_ID = st.secrets["INTERVALS_ATHLETE_ID"]
 KST = ZoneInfo("Asia/Seoul")
 now = datetime.now(KST)
 
-# 4. 데이터 로딩 (충분히 이전 연도부터 전체 데이터 조회)
+# 4. 데이터 로딩
 @st.cache_data(ttl=300)
 def fetch_running_data(start_date_str):
     url = f"https://intervals.icu/api/v1/athlete/{ATHLETE_ID}/activities?oldest={start_date_str}"
@@ -191,7 +190,6 @@ def fetch_running_data(start_date_str):
         return response.json()
     return []
 
-# 충분히 여유 있는 과거 시점(예: 3년 전)부터 데이터 조회
 past_year_start = f"{now.year - 3}-01-01"
 activities = fetch_running_data(past_year_start)
 
@@ -297,7 +295,7 @@ else:
     st.markdown(f"<p style='font-size:0.85rem; font-weight:800; color:#0F172A; margin-top:4px;'>🔥 이번 달 총 {run_count}회 달리셨어요!</p>", unsafe_allow_html=True)
 st.write("")
 
-# 3. 서브 카드 출력 ('남은 거리' 글씨 크기 키움 적용)
+# 3. 서브 카드 출력
 sub_cards_html = """
 <div class="grid-container">
     <div class="sub-card">
@@ -356,7 +354,8 @@ fig_curr.update_traces(
     marker_color="#0284C7",
     textposition="outside",
     cliponaxis=False,
-    hoverinfo="none"
+    hoverinfo="none",
+    textfont=dict(size=9, color="#475569")
 )
 fig_curr.for_each_trace(lambda t: t.update(text=[v if v > 0 else "" for v in t.y]))
 fig_curr.update_layout(
@@ -379,7 +378,6 @@ st.plotly_chart(fig_curr, use_container_width=True, key="chart_current_month", c
 st.markdown("<hr style='margin: 30px 0 20px 0; border: none; border-top: 1px solid #E2E8F0;'>", unsafe_allow_html=True)
 
 if not df_all.empty:
-    # 전체 월별 데이터 집계
     monthly_summary_full = df_all.groupby("Month", as_index=False).agg(
         Total_Distance=("Distance", "sum"),
         Run_Count=("Distance", "count")
@@ -387,10 +385,8 @@ if not df_all.empty:
     monthly_summary_full["Total_Distance"] = monthly_summary_full["Total_Distance"].round(2)
     monthly_summary_full = monthly_summary_full.sort_values("Month")
 
-    # [그래프용] 최근 12개월만 추출
     monthly_summary_12m = monthly_summary_full.sort_values("Month", ascending=False).head(12).sort_values("Month")
 
-    # 200km 초과 달성 여부에 따른 차분한 색상 분기 처리 (초과: 딥 네이비 #1E3A8A, 미만: 슬레이트 블루/그레이 #94A3B8)
     monthly_summary_12m["Color"] = monthly_summary_12m["Total_Distance"].apply(
         lambda x: "#1E3A8A" if x >= GOAL_KM else "#94A3B8"
     )
@@ -404,23 +400,23 @@ if not df_all.empty:
         text="Total_Distance",
         text_auto=".2f",
         color="Color",
-        color_discrete_map="identity"  # 지정한 색상 코드를 그대로 사용
+        color_discrete_map="identity"
     )
+    
+    # 그래프 위 텍스트 크기와 스타일을 일괄 통일 (폰트 크기 9, 색상 통일)
     fig_all_months.update_traces(
         textposition="outside",
         cliponaxis=False,
-        hoverinfo="none"
+        hoverinfo="none",
+        textfont=dict(size=9, color="#475569")
     )
     
-    # 200km 기준선(점선) 추가 및 레이아웃 정리 (점잖은 차콜/그레이 톤)
+    # 200km 기준선(점선) 추가 (문구 제거)
     fig_all_months.add_hline(
         y=GOAL_KM, 
         line_dash="dot", 
         line_color="#64748B", 
-        line_width=1.5,
-        annotation_text="목표 200km", 
-        annotation_position="top right",
-        annotation_font=dict(size=9, color="#64748B", family="Pretendard")
+        line_width=1.5
     )
 
     fig_all_months.update_layout(
@@ -440,7 +436,6 @@ if not df_all.empty:
     st.write("")
     st.markdown("<p style='font-size:0.85rem; font-weight:800; color:#334155; margin-bottom:6px;'>📋 전체 월별 상세 기록 요약</p>", unsafe_allow_html=True)
     
-    # [표용] 전체 기간 데이터를 내림차순 정렬하여 사용
     display_df = monthly_summary_full.rename(columns={
         "Month": "조회 월",
         "Total_Distance": "총 거리 (km)",
