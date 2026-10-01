@@ -57,7 +57,6 @@ st.markdown("""
         padding: 0 4px;
     }
     
-    /* 상단 타이틀 한 줄 배치 및 모바일 밸런스 최적화 크기 */
     .crew-title {
         font-size: 1.45rem !important;
         font-weight: 900;
@@ -206,7 +205,7 @@ if activities:
 
 df_all = pd.DataFrame(running_records)
 if not df_all.empty:
-    df_all["Month"] = df_all["Date"].str[:7] # 'YYYY-MM' 형식 추출
+    df_all["Month"] = df_all["Date"].str[:7]
 
 # 날짜 및 요일 연동 계산
 year = now.strftime("%Y")
@@ -217,7 +216,7 @@ current_weekday = week_days[now.weekday()]
 date_text = f"{year}.{month_num}.{current_day:02d} ({current_weekday})"
 calendar_icon_html = f"🗓️"
 
-# 상단 헤더 출력 (이실권 200CREW 한 줄 배치)
+# 상단 헤더 출력
 header_html = """
     <div class="crew-header">
         <div class="crew-title">이실권 200CREW</div>
@@ -255,10 +254,9 @@ if mascot_base64:
 else:
     mascot_html = '<span style="font-size: 1.8rem; display: block; text-align: right;">🏃💨</span>'
 
-# 자동 연도/월 반영 텍스트 생성 (예: "26년 10월 목표" 또는 "2026년 10월 목표")
 dynamic_goal_title = f"🎯 {now.strftime('%y년 %m월')} 목표"
 
-# 1. 메인 히어로 카드 (자동 변경되는 월간 목표 표시)
+# 1. 메인 히어로 카드
 hero_html = """
     <div class="hero-card">
         <div class="hero-top-row">
@@ -287,7 +285,7 @@ hero_html = """
 )
 st.markdown(hero_html, unsafe_allow_html=True)
 
-# 2. 프로그레스 바 (100% 초과 반영)
+# 2. 프로그레스 바
 st.progress(min(1.0, progress))
 if progress > 1.0:
     st.caption(f"🔥 목표 달성 완료! 현재 {percent}% 달성 중 (총 {run_count}회)")
@@ -335,7 +333,7 @@ sub_cards_html = """
 )
 st.markdown(sub_cards_html, unsafe_allow_html=True)
 
-# 4. 이번 달 일별 차트 (1일부터 말일까지 전체 날짜 표시)
+# 4. 이번 달 일별 차트
 st.markdown("<p style='font-size:0.82rem; font-weight:800; color:#334155; margin-bottom:6px;'>📊 이번 달 일별 운동 거리 (km)</p>", unsafe_allow_html=True)
 
 _, last_day = calendar.monthrange(now.year, now.month)
@@ -368,7 +366,8 @@ fig_curr.update_layout(
     yaxis=dict(fixedrange=True, showgrid=True, gridcolor="#E2E8F0", tickfont=dict(size=9, color="#64748B")),
     font=dict(size=10, color="#475569")
 )
-st.plotly_chart(fig_curr, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False, 'staticPlot': True})
+# 고유 key 부여로 충돌 방지
+st.plotly_chart(fig_curr, use_container_width=True, key="chart_current_month", config={'displayModeBar': False, 'scrollZoom': False, 'staticPlot': True})
 
 
 # ==========================================
@@ -409,7 +408,7 @@ if not df_all.empty:
         yaxis=dict(fixedrange=True, showgrid=True, gridcolor="#E2E8F0", tickfont=dict(size=9, color="#64748B")),
         font=dict(size=10, color="#475569")
     )
-    st.plotly_chart(fig_all_months, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False, 'staticPlot': True})
+    st.plotly_chart(fig_all_months, use_container_width=True, key="chart_all_months", config={'displayModeBar': False, 'scrollZoom': False, 'staticPlot': True})
 
     st.write("")
     st.markdown("<p style='font-size:0.85rem; font-weight:800; color:#334155; margin-bottom:6px;'>📋 월별 상세 기록 요약</p>", unsafe_allow_html=True)
@@ -426,7 +425,9 @@ if not df_all.empty:
     st.write("")
     st.markdown("<p style='font-size:0.85rem; font-weight:800; color:#334155; margin-bottom:6px;'>🔍 특정 월 상세 일별 그래프 보기</p>", unsafe_allow_html=True)
     available_months = sorted(df_all["Month"].unique(), reverse=True)
-    selected_month = st.selectbox("확인할 월 선택", available_months, index=0, label_visibility="collapsed")
+    
+    # selectbox에 고유 key 추가
+    selected_month = st.selectbox("확인할 월 선택", available_months, index=0, label_visibility="collapsed", key="select_target_month")
     
     df_selected = df_all[df_all["Month"] == selected_month]
     sel_year, sel_mon = map(int, selected_month.split("-"))
@@ -437,6 +438,7 @@ if not df_all.empty:
     daily_df_sel = df_selected.groupby("Date", as_index=False)["Distance"].sum()
     merged_sel = pd.merge(full_dates_df_sel, daily_df_sel, on="Date", how="left").fillna(0)
     
+    # 변수명을 fig_sel로 유지하되, st.plotly_chart에 명확한 고유 key 부여
     fig_sel = px.bar(merged_sel, x="Date", y="Distance", text_auto=".2f")
     fig_sel.update_traces(
         marker_color="#0284C7",
@@ -456,7 +458,7 @@ if not df_all.empty:
         yaxis=dict(fixedrange=True, showgrid=True, gridcolor="#E2E8F0", tickfont=dict(size=9, color="#64748B")),
         font=dict(size=10, color="#475569")
     )
-    st.plotly_chart(fig_sel, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False, 'staticPlot': True})
+    st.plotly_chart(fig_sel, use_container_width=True, key="chart_selected_month_detail", config={'displayModeBar': False, 'scrollZoom': False, 'staticPlot': True})
 
 else:
     st.info("조회 가능한 러닝 기록이 없습니다.")
