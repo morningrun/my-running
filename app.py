@@ -336,7 +336,7 @@ sub_cards_html = """
 st.markdown(sub_cards_html, unsafe_allow_html=True)
 
 # 4. 이번 달 일별 차트
-current_month_title_str = f"📊 {now.month}월 일별 운동 거리 (km)"
+current_month_title_str = f"📊 {now.month}월 운동 현황"
 st.markdown(f"<p style='font-size:1.1rem; font-weight:900; color:#0F172A; margin-bottom:12px;'>{current_month_title_str}</p>", unsafe_allow_html=True)
 
 _, last_day = calendar.monthrange(now.year, now.month)
