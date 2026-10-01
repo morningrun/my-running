@@ -399,10 +399,11 @@ if not df_all.empty:
         Run_Count=("Distance", "count")
     )
     monthly_summary_full["Total_Distance"] = monthly_summary_full["Total_Distance"].round(2)
-    # 실제 연-월(YYYY-MM) 문자열 기준으로 완벽하게 정렬되도록 수정
-    monthly_summary_full = monthly_summary_full.sort_values("Month")
 
-    monthly_summary_12m = monthly_summary_full.sort_values("Month", ascending=False).head(12).sort_values("Month")
+    monthly_summary_full["Month_DT"] = pd.to_datetime(monthly_summary_full["Month"], format="%Y-%m")
+    monthly_summary_full = monthly_summary_full.sort_values("Month_DT")
+
+    monthly_summary_12m = monthly_summary_full.sort_values("Month_DT", ascending=False).head(12).sort_values("Month_DT")
 
     def format_month_label(m_str):
         parts = m_str.split("-")
@@ -467,17 +468,17 @@ if not df_all.empty:
     st.write("")
     st.markdown("<p style='font-size:1.1rem; font-weight:900; color:#0F172A; margin-bottom:12px;'>📋 월별 현황 요약</p>", unsafe_allow_html=True)
     
-    # 💡 핵심 수정: 날짜(Month) 기준 내림차순(최신순) 정렬 적용
-    display_df = monthly_summary_full.sort_values("Month", ascending=False).rename(columns={
+    # 💡 핵심 수정: 총 거리 컬럼을 소수점 둘째 자리 문자열로 포맷팅하여 뒤에 00이 붙지 않도록 처리
+    display_df = monthly_summary_full.sort_values("Month_DT", ascending=False).copy()
+    display_df["총 거리 (km)"] = display_df["Total_Distance"].apply(lambda x: f"{x:.2f}")
+    display_df["목표 달성률"] = (display_df["Total_Distance"] / GOAL_KM * 100).round(1).astype(str) + "%"
+
+    display_df = display_df.rename(columns={
         "Month_Label": "조회 월",
-        "Total_Distance": "총 거리 (km)",
         "Run_Count": "러닝 횟수"
-    }).reset_index(drop=True)
+    })[["조회 월", "총 거리 (km)", "러닝 횟수", "목표 달성률"]].reset_index(drop=True)
     
-    display_df["목표 달성률"] = (display_df["총 거리 (km)"] / GOAL_KM * 100).round(1).astype(str) + "%"
-    display_df = display_df[["조회 월", "총 거리 (km)", "러닝 횟수", "목표 달성률"]]
-    
-    # 고정형 표(st.table)로 출력하여 순서 고정
+    # 고정형 표(st.table) 사용
     st.table(display_df)
 
 else:
