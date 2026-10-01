@@ -106,7 +106,7 @@ st.markdown("""
         letter-spacing: 0.3px;
     }
     .hero-goal-target {
-        font-size: 1.15rem;
+        font-size: 1.45rem !important;
         color: #38BDF8;
         font-weight: 900;
     }
