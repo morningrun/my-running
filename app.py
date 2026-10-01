@@ -336,7 +336,8 @@ sub_cards_html = """
 st.markdown(sub_cards_html, unsafe_allow_html=True)
 
 # 4. 이번 달 일별 차트
-st.markdown("<p style='font-size:0.82rem; font-weight:800; color:#334155; margin-bottom:6px;'>📊 이번 달 일별 운동 거리 (km)</p>", unsafe_allow_html=True)
+current_month_title_str = f"📊 {now.month}월 일별 운동 거리 (km)"
+st.markdown(f"<p style='font-size:0.82rem; font-weight:800; color:#334155; margin-bottom:6px;'>{current_month_title_str}</p>", unsafe_allow_html=True)
 
 _, last_day = calendar.monthrange(now.year, now.month)
 all_dates_current = [f"{now.year}-{now.month:02d}-{day:02d}" for day in range(1, last_day + 1)]
@@ -349,7 +350,10 @@ else:
     merged_current = full_dates_df_current
     merged_current["Distance"] = 0.0
 
-fig_curr = px.bar(merged_current, x="Date", y="Distance")
+# X축 표시용 '월/일' 형식 (예: 10/1, 10/2 ...) 컬럼 생성
+merged_current["Date_Label"] = pd.to_datetime(merged_current["Date"]).dt.strftime(f"{now.month}/%-d")
+
+fig_curr = px.bar(merged_current, x="Date_Label", y="Distance")
 fig_curr.update_traces(
     text=[f"{v:.2f}" if v > 0 else "" for v in merged_current["Distance"]],
     textposition="outside",
