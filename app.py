@@ -27,7 +27,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# 2. 화면 스타일 CSS (표 간격 및 여백 최적화)
+# 2. 화면 스타일 CSS (표는 이전 적당한 크기, 여백 최적화)
 st.markdown("""
     <style>
     @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -171,7 +171,7 @@ st.markdown("""
         border-radius: 10px;
     }
 
-    /* 적당한 간격과 여백을 준 커스텀 테이블 스타일 */
+    /* 이전 크기로 되돌린 깔끔한 커스텀 테이블 스타일 */
     .custom-table {
         width: 100%;
         border-collapse: collapse;
@@ -186,7 +186,7 @@ st.markdown("""
         color: #0F172A;
         font-weight: 700;
         text-align: center;
-        padding: 8px 6px;
+        padding: 7px 6px;
         border-bottom: 1px solid #E2E8F0;
         line-height: 1.3;
     }
@@ -419,7 +419,7 @@ st.plotly_chart(fig_curr, use_container_width=True, key="chart_current_month", c
 
 
 # ==========================================
-# 5. 월별 현황 섹션 (최근 12개월 그래프 높이 170 고정 및 동적 Y축 스케일링)
+# 5. 월별 현황 섹션 (최근 12개월 그래프 높이를 220으로 키움)
 # ==========================================
 st.markdown("<hr style='margin: 25px 0 15px 0; border: none; border-top: 1px solid #E2E8F0;'>", unsafe_allow_html=True)
 
@@ -476,8 +476,8 @@ if not df_all.empty:
     )
 
     fig_all_months.update_layout(
-        margin=dict(l=10, r=10, t=30, b=0),
-        height=170,
+        margin=dict(l=10, r=10, t=35, b=0),
+        height=220,  # 그래프 높이를 170에서 220으로 확대
         xaxis_title=None,
         yaxis_title=None,
         showlegend=False,
@@ -508,7 +508,7 @@ if not df_all.empty:
         "Run_Count": "러닝 횟수"
     })[["조회 월", "총 거리 (km)", "러닝 횟수", "목표 달성률"]].reset_index(drop=True)
     
-    # 적당한 여백이 있는 HTML 테이블 출력
+    # 이전의 깔끔하고 적당한 간격의 HTML 테이블 출력
     table_html = "<table class='custom-table'>"
     table_html += "<thead><tr>"
     for col in display_df.columns:
