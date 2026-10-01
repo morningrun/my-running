@@ -350,7 +350,6 @@ else:
     merged_current = full_dates_df_current
     merged_current["Distance"] = 0.0
 
-# X축 레이블: 각 날짜를 숫자로 지정 (예: "1", "2", ...)
 merged_current["Date_Label"] = [str(int(d.split("-")[2])) for d in merged_current["Date"]]
 
 fig_curr = px.bar(merged_current, x="Date_Label", y="Distance")
@@ -363,7 +362,6 @@ fig_curr.update_traces(
     textfont=dict(size=9, color="#475569", family="Pretendard")
 )
 
-# 3일 단위(1, 4, 7, 10, ...)로 눈금 강제 지정
 tick_vals_list = [str(d) for d in range(1, last_day + 1) if (d - 1) % 3 == 0 or d == last_day]
 
 fig_curr.update_layout(
@@ -402,12 +400,11 @@ if not df_all.empty:
 
     monthly_summary_12m = monthly_summary_full.sort_values("Month", ascending=False).head(12).sort_values("Month")
 
-    # X축 표시용 포맷 변환 컬럼 추가 (예: "2026-03" -> "26-3월")
     def format_month_label(m_str):
         parts = m_str.split("-")
         if len(parts) == 2:
-            yy = parts[0][2:]  # 연도 뒤 두 자리 (예: '26')
-            mm = int(parts[1]) # 월 (예: 3)
+            yy = parts[0][2:]
+            mm = int(parts[1])
             return f"{yy}-{mm}월"
         return m_str
 
@@ -420,17 +417,16 @@ if not df_all.empty:
 
     st.markdown("<p style='font-size:1.1rem; font-weight:900; color:#0F172A; margin-bottom:12px;'>📈 최근 12개월 운동 현황 비교</p>", unsafe_allow_html=True)
 
-    # X축에 변환된 "Month_Label" 컬럼 적용
+    # 200km 넘은 달과 안 넘은 달을 분리하여 실제 거리가 텍스트로 올바르게 출력되도록 수정
     fig_all_months = px.bar(
         monthly_summary_12m,
         x="Month_Label",
         y="Total_Distance",
-        color="Color",
-        color_discrete_map="identity"
+        text=monthly_summary_12m["Total_Distance"].apply(lambda v: f"{v:.2f}")
     )
     
     fig_all_months.update_traces(
-        text=[f"{v:.2f}" for v in monthly_summary_12m["Total_Distance"]],
+        marker_color=monthly_summary_12m["Color"],
         textposition="outside",
         cliponaxis=False,
         hoverinfo="none",
