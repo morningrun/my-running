@@ -335,7 +335,7 @@ sub_cards_html = """
 )
 st.markdown(sub_cards_html, unsafe_allow_html=True)
 
-# 4. 이번 달 일별 차트
+# 4. 이번 달 일별 차트 (숫자 없음)
 current_month_title_str = f"📊 {now.month}월 운동 현황"
 st.markdown(f"<p style='font-size:1.1rem; font-weight:900; color:#0F172A; margin-bottom:12px;'>{current_month_title_str}</p>", unsafe_allow_html=True)
 
@@ -383,7 +383,7 @@ st.plotly_chart(fig_curr, use_container_width=True, key="chart_current_month", c
 
 
 # ==========================================
-# 5. 월별 현황 섹션
+# 5. 월별 현황 섹션 (최근 12개월 그래프에 숫자 표시 유지)
 # ==========================================
 st.markdown("<hr style='margin: 30px 0 20px 0; border: none; border-top: 1px solid #E2E8F0;'>", unsafe_allow_html=True)
 
@@ -417,13 +417,17 @@ if not df_all.empty:
     fig_all_months = px.bar(
         monthly_summary_12m,
         x="Month_Label",
-        y="Total_Distance"
+        y="Total_Distance",
+        text=monthly_summary_12m["Total_Distance"].apply(lambda v: f"{v:.2f}")
     )
     
     fig_all_months.update_traces(
+        texttemplate="%{text}",
         marker_color=monthly_summary_12m["Color"],
+        textposition="outside",
         cliponaxis=False,
-        hoverinfo="x+y"
+        hoverinfo="none",
+        textfont=dict(size=10, color="#0F172A", family="Pretendard", weight="bold")
     )
     
     fig_all_months.add_hline(
@@ -434,8 +438,8 @@ if not df_all.empty:
     )
 
     fig_all_months.update_layout(
-        margin=dict(l=15, r=15, t=25, b=0),
-        height=200,
+        margin=dict(l=15, r=15, t=35, b=0),
+        height=220,
         xaxis_title=None,
         yaxis_title=None,
         showlegend=False,
