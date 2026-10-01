@@ -335,7 +335,7 @@ sub_cards_html = """
 )
 st.markdown(sub_cards_html, unsafe_allow_html=True)
 
-# 4. 이번 달 일별 차트 (높이를 140으로 축소)
+# 4. 이번 달 일별 차트 (높이 140 고정 및 동적 Y축 스케일링)
 current_month_title_str = f"📊 {now.month}월 운동 현황"
 st.markdown(f"<p style='font-size:1.1rem; font-weight:900; color:#0F172A; margin-bottom:12px;'>{current_month_title_str}</p>", unsafe_allow_html=True)
 
@@ -363,7 +363,7 @@ tick_vals_list = [str(d) for d in range(1, last_day + 1) if (d - 1) % 3 == 0 or 
 
 fig_curr.update_layout(
     margin=dict(l=0, r=0, t=10, b=0),
-    height=140,  # 높이를 줄여서 핸드폰 화면 최적화
+    height=140,  # 핸드폰 화면 최적화 높이
     xaxis_title=None,
     yaxis_title=None,
     plot_bgcolor="rgba(0,0,0,0)",
@@ -376,14 +376,20 @@ fig_curr.update_layout(
         ticktext=tick_vals_list,
         tickfont=dict(size=10, color="#64748B")
     ),
-    yaxis=dict(fixedrange=True, showgrid=True, gridcolor="#E2E8F0", tickfont=dict(size=10, color="#64748B")),
+    yaxis=dict(
+        fixedrange=True, 
+        showgrid=True, 
+        gridcolor="#E2E8F0", 
+        tickfont=dict(size=10, color="#64748B"),
+        rangemode="tozero"  # 값이 커져도 Y축이 0부터 유연하게 자동 조절되어 비율 유지
+    ),
     font=dict(size=10, color="#475569")
 )
 st.plotly_chart(fig_curr, use_container_width=True, key="chart_current_month", config={'displayModeBar': False, 'scrollZoom': False, 'staticPlot': True})
 
 
 # ==========================================
-# 5. 월별 현황 섹션 (최근 12개월 그래프 높이를 170으로 축소)
+# 5. 월별 현황 섹션 (최근 12개월 그래프 높이 170 고정 및 동적 Y축 스케일링)
 # ==========================================
 st.markdown("<hr style='margin: 25px 0 15px 0; border: none; border-top: 1px solid #E2E8F0;'>", unsafe_allow_html=True)
 
@@ -439,14 +445,20 @@ if not df_all.empty:
 
     fig_all_months.update_layout(
         margin=dict(l=10, r=10, t=30, b=0),
-        height=170,  # 높이를 줄여서 핸드폰 화면 최적화
+        height=170,  # 핸드폰 화면 최적화 높이
         xaxis_title=None,
         yaxis_title=None,
         showlegend=False,
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
         xaxis=dict(fixedrange=True, showgrid=False, tickfont=dict(size=10, color="#64748B")),
-        yaxis=dict(fixedrange=True, showgrid=True, gridcolor="#E2E8F0", tickfont=dict(size=10, color="#64748B"), rangemode="tozero"),
+        yaxis=dict(
+            fixedrange=True, 
+            showgrid=True, 
+            gridcolor="#E2E8F0", 
+            tickfont=dict(size=10, color="#64748B"), 
+            rangemode="tozero"  # 데이터 값이 커져도 높이가 고정된 채 비율에 맞춰 자연스럽게 스케일링
+        ),
         font=dict(size=10, color="#475569")
     )
     st.plotly_chart(fig_all_months, use_container_width=True, key="chart_all_months", config={'displayModeBar': False, 'scrollZoom': False, 'staticPlot': True})
