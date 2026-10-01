@@ -363,7 +363,7 @@ tick_vals_list = [str(d) for d in range(1, last_day + 1) if (d - 1) % 3 == 0 or 
 
 fig_curr.update_layout(
     margin=dict(l=0, r=0, t=10, b=0),
-    height=140,  # 핸드폰 화면 최적화 높이
+    height=140,
     xaxis_title=None,
     yaxis_title=None,
     plot_bgcolor="rgba(0,0,0,0)",
@@ -381,7 +381,7 @@ fig_curr.update_layout(
         showgrid=True, 
         gridcolor="#E2E8F0", 
         tickfont=dict(size=10, color="#64748B"),
-        rangemode="tozero"  # 값이 커져도 Y축이 0부터 유연하게 자동 조절되어 비율 유지
+        rangemode="tozero"
     ),
     font=dict(size=10, color="#475569")
 )
@@ -445,7 +445,7 @@ if not df_all.empty:
 
     fig_all_months.update_layout(
         margin=dict(l=10, r=10, t=30, b=0),
-        height=170,  # 핸드폰 화면 최적화 높이
+        height=170,
         xaxis_title=None,
         yaxis_title=None,
         showlegend=False,
@@ -457,7 +457,7 @@ if not df_all.empty:
             showgrid=True, 
             gridcolor="#E2E8F0", 
             tickfont=dict(size=10, color="#64748B"), 
-            rangemode="tozero"  # 데이터 값이 커져도 높이가 고정된 채 비율에 맞춰 자연스럽게 스케일링
+            rangemode="tozero"
         ),
         font=dict(size=10, color="#475569")
     )
@@ -466,6 +466,7 @@ if not df_all.empty:
     st.write("")
     st.markdown("<p style='font-size:1.1rem; font-weight:900; color:#0F172A; margin-bottom:12px;'>📋 월별 현황 요약</p>", unsafe_allow_html=True)
     
+    # 최신 날짜가 맨 위로 오도록 내림차순(ascending=False) 정렬
     display_df = monthly_summary_full.rename(columns={
         "Month_Label": "조회 월",
         "Total_Distance": "총 거리 (km)",
@@ -475,7 +476,8 @@ if not df_all.empty:
     display_df["목표 달성률"] = (display_df["총 거리 (km)"] / GOAL_KM * 100).round(1).astype(str) + "%"
     display_df = display_df[["조회 월", "총 거리 (km)", "러닝 횟수", "목표 달성률"]]
     
-    st.dataframe(display_df, use_container_width=True, hide_index=True)
+    # 정렬이 흐트러지지 않는 고정형 표(st.table) 사용
+    st.table(display_df)
 
 else:
     st.info("조회 가능한 러닝 기록이 없습니다.")
