@@ -27,7 +27,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# 2. 화면 스타일 CSS (표 가운데 정렬 스타일 포함)
+# 2. 화면 스타일 CSS (표 위아래 간격 축소 및 가운데 정렬 스타일 포함)
 st.markdown("""
     <style>
     @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -171,29 +171,31 @@ st.markdown("""
         border-radius: 10px;
     }
 
-    /* 커스텀 테이블 스타일 (가운데 정렬) */
+    /* 슬림하고 컴팩트한 커스텀 테이블 스타일 (위아래 여백 축소) */
     .custom-table {
         width: 100%;
         border-collapse: collapse;
         background-color: #FFFFFF;
-        border-radius: 12px;
+        border-radius: 8px;
         overflow: hidden;
         border: 1px solid #E2E8F0;
-        font-size: 0.9rem;
+        font-size: 0.8rem;
     }
     .custom-table th {
         background-color: #F1F5F9;
         color: #0F172A;
         font-weight: 700;
         text-align: center;
-        padding: 10px;
+        padding: 5px 2px;
         border-bottom: 1px solid #E2E8F0;
+        line-height: 1.2;
     }
     .custom-table td {
         text-align: center;
-        padding: 10px;
+        padding: 4px 2px;
         color: #334155;
         border-bottom: 1px solid #F1F5F9;
+        line-height: 1.2;
     }
     .custom-table tr:last-child td {
         border-bottom: none;
@@ -494,7 +496,7 @@ if not df_all.empty:
     st.plotly_chart(fig_all_months, use_container_width=True, key="chart_all_months", config={'displayModeBar': False, 'scrollZoom': False, 'staticPlot': True})
 
     st.write("")
-    st.markdown("<p style='font-size:1.1rem; font-weight:900; color:#0F172A; margin-bottom:12px;'>📋 월별 현황 요약</p>", unsafe_allow_html=True)
+    st.markdown("<p style='font-size:1.1rem; font-weight:900; color:#0F172A; margin-bottom:8px;'>📋 월별 현황 요약</p>", unsafe_allow_html=True)
     
     # 데이터 준비 및 포맷팅
     display_df = monthly_summary_full.sort_values("Month_DT", ascending=False).copy()
@@ -506,7 +508,7 @@ if not df_all.empty:
         "Run_Count": "러닝 횟수"
     })[["조회 월", "총 거리 (km)", "러닝 횟수", "목표 달성률"]].reset_index(drop=True)
     
-    # HTML 테이블로 변환하여 가운데 정렬 적용
+    # 슬림하고 컴팩트한 HTML 테이블 출력
     table_html = "<table class='custom-table'>"
     table_html += "<thead><tr>"
     for col in display_df.columns:
