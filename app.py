@@ -101,13 +101,13 @@ st.markdown("""
         margin-bottom: 14px;
     }
     .hero-goal-title {
-        font-size: 0.82rem;
+        font-size: 0.95rem;
         color: #94A3B8;
         font-weight: 700;
-        letter-spacing: 0.5px;
+        letter-spacing: 0.3px;
     }
     .hero-goal-target {
-        font-size: 1.05rem;
+        font-size: 1.15rem;
         color: #38BDF8;
         font-weight: 900;
     }
@@ -255,12 +255,15 @@ if mascot_base64:
 else:
     mascot_html = '<span style="font-size: 1.8rem; display: block; text-align: right;">🏃💨</span>'
 
-# 1. 메인 히어로 카드 (이번 달 현황)
+# 자동 연도/월 반영 텍스트 생성 (예: "26년 10월 목표" 또는 "2026년 10월 목표")
+dynamic_goal_title = f"🎯 {now.strftime('%y년 %m월')} 목표"
+
+# 1. 메인 히어로 카드 (자동 변경되는 월간 목표 표시)
 hero_html = """
     <div class="hero-card">
         <div class="hero-top-row">
             <div>
-                <span class="hero-goal-title">🎯 이번 달 월간 목표</span>
+                <span class="hero-goal-title">{goal_title}</span>
                 <span class="hero-goal-target" style="margin-left: 8px;">{goal} km</span>
             </div>
             <div style="width: 56px;">{mascot}</div>
@@ -276,6 +279,7 @@ hero_html = """
         </div>
     </div>
 """.format(
+    goal_title=dynamic_goal_title,
     mascot=mascot_html,
     total=total_km,
     goal=int(GOAL_KM),
