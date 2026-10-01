@@ -359,13 +359,13 @@ fig_curr.update_traces(
     marker_color="#0284C7",
     cliponaxis=False,
     hoverinfo="none",
-    textfont=dict(size=9, color="#475569", family="Pretendard")
+    textfont=dict(size=11, color="#1E293B", family="Pretendard", weight="bold")
 )
 
 tick_vals_list = [str(d) for d in range(1, last_day + 1) if (d - 1) % 3 == 0 or d == last_day]
 
 fig_curr.update_layout(
-    margin=dict(l=0, r=0, t=25, b=0),
+    margin=dict(l=0, r=0, t=30, b=0),
     height=160,
     xaxis_title=None,
     yaxis_title=None,
@@ -377,7 +377,7 @@ fig_curr.update_layout(
         tickmode="array",
         tickvals=tick_vals_list,
         ticktext=tick_vals_list,
-        tickfont=dict(size=8, color="#64748B")
+        tickfont=dict(size=9, color="#64748B")
     ),
     yaxis=dict(fixedrange=True, showgrid=True, gridcolor="#E2E8F0", tickfont=dict(size=9, color="#64748B")),
     font=dict(size=10, color="#475569")
@@ -429,7 +429,7 @@ if not df_all.empty:
         textposition="outside",
         cliponaxis=False,
         hoverinfo="none",
-        textfont=dict(size=9, color="#475569", family="Pretendard")
+        textfont=dict(size=11, color="#1E293B", family="Pretendard", weight="bold")
     )
     
     fig_all_months.add_hline(
@@ -440,7 +440,7 @@ if not df_all.empty:
     )
 
     fig_all_months.update_layout(
-        margin=dict(l=0, r=0, t=25, b=0),
+        margin=dict(l=0, r=0, t=30, b=0),
         height=185,
         xaxis_title=None,
         yaxis_title=None,
