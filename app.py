@@ -371,7 +371,7 @@ fig_curr.update_layout(
     yaxis_title=None,
     plot_bgcolor="rgba(0,0,0,0)",
     paper_bgcolor="rgba(0,0,0,0)",
-    uniformtext=dict(mode="hide", minfontsize=11),
+    uniformtext=dict(mode="hide", minsize=11),  # minfontsize -> minsize 로 수정 완료
     xaxis=dict(
         fixedrange=True, 
         showgrid=False, 
@@ -425,7 +425,6 @@ if not df_all.empty:
         text=monthly_summary_12m["Total_Distance"].apply(lambda v: f"{v:.2f}")
     )
     
-    # 텍스트 크기를 완전히 고정하고 자동 축소 방지
     fig_all_months.update_traces(
         marker_color=monthly_summary_12m["Color"],
         textposition="outside",
@@ -449,7 +448,7 @@ if not df_all.empty:
         showlegend=False,
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
-        uniformtext=dict(mode="hide", minfontsize=11),  # 글자 크기가 작아지는 것 원천 방지
+        uniformtext=dict(mode="hide", minsize=11),  # minfontsize -> minsize 로 수정 완료
         xaxis=dict(fixedrange=True, showgrid=False, tickfont=dict(size=10, color="#64748B")),
         yaxis=dict(fixedrange=True, showgrid=True, gridcolor="#E2E8F0", tickfont=dict(size=10, color="#64748B"), rangemode="tozero"),
         font=dict(size=10, color="#475569")
