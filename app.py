@@ -386,7 +386,7 @@ st.plotly_chart(fig_curr, use_container_width=True, key="chart_current_month", c
 
 
 # ==========================================
-# 5. 월별 현황 비교 섹션
+# 5. 월별 현황 섹션
 # ==========================================
 st.markdown("<hr style='margin: 30px 0 20px 0; border: none; border-top: 1px solid #E2E8F0;'>", unsafe_allow_html=True)
 
@@ -415,9 +415,8 @@ if not df_all.empty:
         lambda x: "#1E3A8A" if x >= GOAL_KM else "#94A3B8"
     )
 
-    st.markdown("<p style='font-size:1.1rem; font-weight:900; color:#0F172A; margin-bottom:12px;'>📈 최근 12개월 운동 현황 비교</p>", unsafe_allow_html=True)
+    st.markdown("<p style='font-size:1.1rem; font-weight:900; color:#0F172A; margin-bottom:12px;'>📈 최근 12개월 운동 현황</p>", unsafe_allow_html=True)
 
-    # 200km 넘은 달과 안 넘은 달을 분리하여 실제 거리가 텍스트로 올바르게 출력되도록 수정
     fig_all_months = px.bar(
         monthly_summary_12m,
         x="Month_Label",
