@@ -366,7 +366,6 @@ fig_curr.update_layout(
     yaxis=dict(fixedrange=True, showgrid=True, gridcolor="#E2E8F0", tickfont=dict(size=9, color="#64748B")),
     font=dict(size=10, color="#475569")
 )
-# 고유 key 부여로 충돌 방지
 st.plotly_chart(fig_curr, use_container_width=True, key="chart_current_month", config={'displayModeBar': False, 'scrollZoom': False, 'staticPlot': True})
 
 
@@ -391,8 +390,9 @@ if not df_all.empty:
         text="Total_Distance",
         text_auto=".2f"
     )
+    # 그래프 색상을 너무 진하지 않은 부드러운 파란색 계열(#0ea5e9)로 변경
     fig_all_months.update_traces(
-        marker_color="#0F172A",
+        marker_color="#0ea5e9",
         textposition="outside",
         cliponaxis=False,
         hoverinfo="none"
@@ -420,13 +420,16 @@ if not df_all.empty:
     }).sort_values("조회 월", ascending=False).reset_index(drop=True)
     
     display_df["목표 달성률"] = (display_df["총 거리 (km)"] / GOAL_KM * 100).round(1).astype(str) + "%"
+    
+    # [수정] '조회 월'이 가장 먼저 오도록 컬럼 순서 재배치
+    display_df = display_df[["조회 월", "총 거리 (km)", "러닝 횟수", "목표 달성률"]]
+    
     st.dataframe(display_df, use_container_width=True, hide_index=True)
 
     st.write("")
     st.markdown("<p style='font-size:0.85rem; font-weight:800; color:#334155; margin-bottom:6px;'>🔍 특정 월 상세 일별 그래프 보기</p>", unsafe_allow_html=True)
     available_months = sorted(df_all["Month"].unique(), reverse=True)
     
-    # selectbox에 고유 key 추가
     selected_month = st.selectbox("확인할 월 선택", available_months, index=0, label_visibility="collapsed", key="select_target_month")
     
     df_selected = df_all[df_all["Month"] == selected_month]
@@ -438,7 +441,6 @@ if not df_all.empty:
     daily_df_sel = df_selected.groupby("Date", as_index=False)["Distance"].sum()
     merged_sel = pd.merge(full_dates_df_sel, daily_df_sel, on="Date", how="left").fillna(0)
     
-    # 변수명을 fig_sel로 유지하되, st.plotly_chart에 명확한 고유 key 부여
     fig_sel = px.bar(merged_sel, x="Date", y="Distance", text_auto=".2f")
     fig_sel.update_traces(
         marker_color="#0284C7",
