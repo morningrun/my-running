@@ -349,15 +349,15 @@ else:
     merged_current = full_dates_df_current
     merged_current["Distance"] = 0.0
 
-fig_curr = px.bar(merged_current, x="Date", y="Distance", text_auto=".2f")
+fig_curr = px.bar(merged_current, x="Date", y="Distance")
 fig_curr.update_traces(
-    marker_color="#0284C7",
+    text=[f"{v:.2f}" if v > 0 else "" for v in merged_current["Distance"]],
     textposition="outside",
+    marker_color="#0284C7",
     cliponaxis=False,
     hoverinfo="none",
-    textfont=dict(size=9, color="#475569")
+    textfont=dict(size=9, color="#475569", family="Pretendard")
 )
-fig_curr.for_each_trace(lambda t: t.update(text=[v if v > 0 else "" for v in t.y]))
 fig_curr.update_layout(
     margin=dict(l=0, r=0, t=25, b=0),
     height=160,
@@ -393,22 +393,22 @@ if not df_all.empty:
 
     st.markdown("<p style='font-size:1.1rem; font-weight:900; color:#0F172A; margin-bottom:12px;'>📈 최근 12개월 운동 현황 비교</p>", unsafe_allow_html=True)
 
+    # 텍스트 명시적 지정 (자동 생성 text_auto 제거)
     fig_all_months = px.bar(
         monthly_summary_12m,
         x="Month",
         y="Total_Distance",
-        text="Total_Distance",
-        text_auto=".2f",
         color="Color",
         color_discrete_map="identity"
     )
     
-    # 그래프 위 텍스트 크기와 스타일을 일괄 통일 (폰트 크기 9, 색상 통일)
+    # 폰트 크기, 색상, 위치를 명시적으로 통일
     fig_all_months.update_traces(
+        text=[f"{v:.2f}" for v in monthly_summary_12m["Total_Distance"]],
         textposition="outside",
         cliponaxis=False,
         hoverinfo="none",
-        textfont=dict(size=9, color="#475569")
+        textfont=dict(size=9, color="#475569", family="Pretendard")
     )
     
     # 200km 기준선(점선) 추가 (문구 제거)
