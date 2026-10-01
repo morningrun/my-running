@@ -335,7 +335,7 @@ sub_cards_html = """
 )
 st.markdown(sub_cards_html, unsafe_allow_html=True)
 
-# 4. 이번 달 일별 차트 (숫자 없음)
+# 4. 이번 달 일별 차트 (높이를 140으로 축소)
 current_month_title_str = f"📊 {now.month}월 운동 현황"
 st.markdown(f"<p style='font-size:1.1rem; font-weight:900; color:#0F172A; margin-bottom:12px;'>{current_month_title_str}</p>", unsafe_allow_html=True)
 
@@ -362,8 +362,8 @@ fig_curr.update_traces(
 tick_vals_list = [str(d) for d in range(1, last_day + 1) if (d - 1) % 3 == 0 or d == last_day]
 
 fig_curr.update_layout(
-    margin=dict(l=0, r=0, t=15, b=0),
-    height=180,
+    margin=dict(l=0, r=0, t=10, b=0),
+    height=140,  # 높이를 줄여서 핸드폰 화면 최적화
     xaxis_title=None,
     yaxis_title=None,
     plot_bgcolor="rgba(0,0,0,0)",
@@ -383,9 +383,9 @@ st.plotly_chart(fig_curr, use_container_width=True, key="chart_current_month", c
 
 
 # ==========================================
-# 5. 월별 현황 섹션 (최근 12개월 그래프에 숫자 표시 유지)
+# 5. 월별 현황 섹션 (최근 12개월 그래프 높이를 170으로 축소)
 # ==========================================
-st.markdown("<hr style='margin: 30px 0 20px 0; border: none; border-top: 1px solid #E2E8F0;'>", unsafe_allow_html=True)
+st.markdown("<hr style='margin: 25px 0 15px 0; border: none; border-top: 1px solid #E2E8F0;'>", unsafe_allow_html=True)
 
 if not df_all.empty:
     monthly_summary_full = df_all.groupby("Month", as_index=False).agg(
@@ -438,8 +438,8 @@ if not df_all.empty:
     )
 
     fig_all_months.update_layout(
-        margin=dict(l=15, r=15, t=35, b=0),
-        height=220,
+        margin=dict(l=10, r=10, t=30, b=0),
+        height=170,  # 높이를 줄여서 핸드폰 화면 최적화
         xaxis_title=None,
         yaxis_title=None,
         showlegend=False,
