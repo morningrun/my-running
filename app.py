@@ -350,8 +350,14 @@ else:
     merged_current = full_dates_df_current
     merged_current["Distance"] = 0.0
 
-# X축 표시용 '일(Day)' 숫자만 추출 (예: 1, 2, 3 ...)
-merged_current["Date_Label"] = pd.to_datetime(merged_current["Date"]).dt.day.astype(str)
+# X축 레이블 설정: 3일 단위(1, 4, 7, 10...)만 숫자로 표시하고 나머지는 빈 문자열로 설정
+def get_day_label(date_str, idx):
+    day_num = int(date_str.split("-")[2])
+    if (day_num - 1) % 3 == 0 or day_num == last_day:
+        return str(day_num)
+    return ""
+
+merged_current["Date_Label"] = [get_day_label(d, i) for i, d in enumerate(merged_current["Date"])]
 
 fig_curr = px.bar(merged_current, x="Date_Label", y="Distance")
 fig_curr.update_traces(
