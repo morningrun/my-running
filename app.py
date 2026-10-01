@@ -56,13 +56,18 @@ st.markdown("""
         margin-bottom: 14px;
         padding: 0 4px;
     }
+    
+    /* 상단 타이틀 크기 및 그라데이션 컬러 적용 */
     .crew-title {
-        font-size: 1.4rem !important;
+        font-size: 1.8rem !important;
         font-weight: 900;
-        letter-spacing: -0.5px;
-        color: #0F172A;
+        letter-spacing: -0.8px;
+        background: linear-gradient(135deg, #0F172A 0%, #0284C7 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
         margin: 0;
     }
+
     .crew-subtitle {
         font-size: 0.78rem;
         color: #64748B;
@@ -231,7 +236,8 @@ if not df_current.empty:
     total_km = round(df_current["Distance"].sum(), 2)
     run_count = len(df_current)
     remaining_km = max(0.0, round(GOAL_KM - total_km, 2))
-    progress = min(1.0, total_km / GOAL_KM)
+    
+    progress = total_km / GOAL_KM
     percent = round(progress * 100, 1)
     
     daily_required_km = round(remaining_km / remaining_days, 2) if remaining_km > 0 else 0.0
@@ -276,8 +282,11 @@ hero_html = """
 st.markdown(hero_html, unsafe_allow_html=True)
 
 # 2. 프로그레스 바
-st.progress(progress)
-st.caption(f"🔥 이번 달 총 {run_count}회 달리셨어요!")
+st.progress(min(1.0, progress))
+if progress > 1.0:
+    st.caption(f"🔥 목표 달성 완료! 현재 {percent}% 달성 중 (총 {run_count}회)")
+else:
+    st.caption(f"🔥 이번 달 총 {run_count}회 달리셨어요!")
 st.write("")
 
 # 3. 서브 카드 출력
@@ -357,21 +366,19 @@ st.plotly_chart(fig_curr, use_container_width=True, config={'displayModeBar': Fa
 
 
 # ==========================================
-# 5. [확장] 전체 월별 현황 한눈에 보기 섹션
+# 5. 전체 월별 현황 한눈에 보기 섹션
 # ==========================================
 st.markdown("<hr style='margin: 30px 0 20px 0; border: none; border-top: 1px solid #E2E8F0;'>", unsafe_allow_html=True)
 st.markdown("<p style='font-size:1.1rem; font-weight:900; color:#0F172A; margin-bottom:12px;'>📈 전체 월별 운동 현황 비교</p>", unsafe_allow_html=True)
 
 if not df_all.empty:
-    # 월별 총 거리 및 횟수 집계
     monthly_summary = df_all.groupby("Month", as_index=False).agg(
         Total_Distance=("Distance", "sum"),
         Run_Count=("Distance", "count")
     )
     monthly_summary["Total_Distance"] = monthly_summary["Total_Distance"].round(2)
-    monthly_summary = monthly_summary.sort_values("Month") # 오름차순 (시간순) 정렬
+    monthly_summary = monthly_summary.sort_values("Month")
 
-    # 전체 월별 누적 거리 비교 바 차트
     fig_all_months = px.bar(
         monthly_summary,
         x="Month",
@@ -401,20 +408,15 @@ if not df_all.empty:
     st.write("")
     st.markdown("<p style='font-size:0.85rem; font-weight:800; color:#334155; margin-bottom:6px;'>📋 월별 상세 기록 요약</p>", unsafe_allow_html=True)
     
-    # 보기 좋게 데이터프레임 가공
     display_df = monthly_summary.rename(columns={
         "Month": "조회 월",
         "Total_Distance": "총 거리 (km)",
         "Run_Count": "러닝 횟수"
     }).sort_values("조회 월", ascending=False).reset_index(drop=True)
     
-    # 200km 목표 대비 달성률 컬럼 추가
     display_df["목표 달성률"] = (display_df["총 거리 (km)"] / GOAL_KM * 100).round(1).astype(str) + "%"
-    
-    # 테이블 출력
     st.dataframe(display_df, use_container_width=True, hide_index=True)
 
-    # 개별 월 상세 확인용 셀렉트박스도 함께 제공
     st.write("")
     st.markdown("<p style='font-size:0.85rem; font-weight:800; color:#334155; margin-bottom:6px;'>🔍 특정 월 상세 일별 그래프 보기</p>", unsafe_allow_html=True)
     available_months = sorted(df_all["Month"].unique(), reverse=True)
@@ -445,7 +447,7 @@ if not df_all.empty:
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
         xaxis=dict(fixedrange=True, showgrid=False, tickfont=dict(size=8, color="#64748B")),
-        yaxis=dict(fixedrange=Y, showgrid=True, gridcolor="#E2E8F0", tickfont=dict(size=9, color="#64748B")),
+        yaxis=dict(fixedrange=True, showgrid=True, gridcolor="#E2E8F0", tickfont=dict(size=9, color="#64748B")),
         font=dict(size=10, color="#475569")
     )
     st.plotly_chart(fig_sel, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False, 'staticPlot': True})
