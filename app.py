@@ -359,14 +359,14 @@ fig_curr.update_traces(
     marker_color="#0284C7",
     cliponaxis=False,
     hoverinfo="none",
-    textfont=dict(size=11, color="#1E293B", family="Pretendard", weight="bold")
+    textfont=dict(size=14, color="#0F172A", family="Pretendard", weight="bold")
 )
 
 tick_vals_list = [str(d) for d in range(1, last_day + 1) if (d - 1) % 3 == 0 or d == last_day]
 
 fig_curr.update_layout(
-    margin=dict(l=0, r=0, t=30, b=0),
-    height=160,
+    margin=dict(l=0, r=0, t=35, b=0),
+    height=180,
     xaxis_title=None,
     yaxis_title=None,
     plot_bgcolor="rgba(0,0,0,0)",
@@ -377,9 +377,9 @@ fig_curr.update_layout(
         tickmode="array",
         tickvals=tick_vals_list,
         ticktext=tick_vals_list,
-        tickfont=dict(size=9, color="#64748B")
+        tickfont=dict(size=10, color="#64748B")
     ),
-    yaxis=dict(fixedrange=True, showgrid=True, gridcolor="#E2E8F0", tickfont=dict(size=9, color="#64748B")),
+    yaxis=dict(fixedrange=True, showgrid=True, gridcolor="#E2E8F0", tickfont=dict(size=10, color="#64748B")),
     font=dict(size=10, color="#475569")
 )
 st.plotly_chart(fig_curr, use_container_width=True, key="chart_current_month", config={'displayModeBar': False, 'scrollZoom': False, 'staticPlot': True})
@@ -429,7 +429,7 @@ if not df_all.empty:
         textposition="outside",
         cliponaxis=False,
         hoverinfo="none",
-        textfont=dict(size=11, color="#1E293B", family="Pretendard", weight="bold")
+        textfont=dict(size=14, color="#0F172A", family="Pretendard", weight="bold")
     )
     
     fig_all_months.add_hline(
@@ -440,15 +440,15 @@ if not df_all.empty:
     )
 
     fig_all_months.update_layout(
-        margin=dict(l=0, r=0, t=30, b=0),
-        height=185,
+        margin=dict(l=0, r=0, t=35, b=0),
+        height=205,
         xaxis_title=None,
         yaxis_title=None,
         showlegend=False,
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
-        xaxis=dict(fixedrange=True, showgrid=False, tickfont=dict(size=9, color="#64748B")),
-        yaxis=dict(fixedrange=True, showgrid=True, gridcolor="#E2E8F0", tickfont=dict(size=9, color="#64748B")),
+        xaxis=dict(fixedrange=True, showgrid=False, tickfont=dict(size=10, color="#64748B")),
+        yaxis=dict(fixedrange=True, showgrid=True, gridcolor="#E2E8F0", tickfont=dict(size=10, color="#64748B")),
         font=dict(size=10, color="#475569")
     )
     st.plotly_chart(fig_all_months, use_container_width=True, key="chart_all_months", config={'displayModeBar': False, 'scrollZoom': False, 'staticPlot': True})
