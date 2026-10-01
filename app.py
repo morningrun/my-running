@@ -274,7 +274,7 @@ hero_html = """
                 <span class="hero-km-label">km 달성</span>
             </div>
             <div>
-                <div class="hero-percent-tag">{pct}%</div>
+                <span class="hero-percent-tag">{pct}%</span>
             </div>
         </div>
     </div>
@@ -350,14 +350,8 @@ else:
     merged_current = full_dates_df_current
     merged_current["Distance"] = 0.0
 
-# X축 레이블 설정: 3일 단위(1, 4, 7, 10...)만 숫자로 표시하고 나머지는 빈 문자열로 설정
-def get_day_label(date_str, idx):
-    day_num = int(date_str.split("-")[2])
-    if (day_num - 1) % 3 == 0 or day_num == last_day:
-        return str(day_num)
-    return ""
-
-merged_current["Date_Label"] = [get_day_label(d, i) for i, d in enumerate(merged_current["Date"])]
+# X축 레이블: 각 날짜를 숫자로 지정 (예: "1", "2", ...)
+merged_current["Date_Label"] = [str(int(d.split("-")[2])) for d in merged_current["Date"]]
 
 fig_curr = px.bar(merged_current, x="Date_Label", y="Distance")
 fig_curr.update_traces(
@@ -368,6 +362,10 @@ fig_curr.update_traces(
     hoverinfo="none",
     textfont=dict(size=9, color="#475569", family="Pretendard")
 )
+
+# 3일 단위(1, 4, 7, 10, ...)로 눈금 강제 지정
+tick_vals_list = [str(d) for d in range(1, last_day + 1) if (d - 1) % 3 == 0 or d == last_day]
+
 fig_curr.update_layout(
     margin=dict(l=0, r=0, t=25, b=0),
     height=160,
@@ -375,7 +373,14 @@ fig_curr.update_layout(
     yaxis_title=None,
     plot_bgcolor="rgba(0,0,0,0)",
     paper_bgcolor="rgba(0,0,0,0)",
-    xaxis=dict(fixedrange=True, showgrid=False, tickfont=dict(size=8, color="#64748B")),
+    xaxis=dict(
+        fixedrange=True, 
+        showgrid=False, 
+        tickmode="array",
+        tickvals=tick_vals_list,
+        ticktext=tick_vals_list,
+        tickfont=dict(size=8, color="#64748B")
+    ),
     yaxis=dict(fixedrange=True, showgrid=True, gridcolor="#E2E8F0", tickfont=dict(size=9, color="#64748B")),
     font=dict(size=10, color="#475569")
 )
@@ -424,7 +429,6 @@ if not df_all.empty:
         color_discrete_map="identity"
     )
     
-    # 두 그래프 모두 상단 글씨 크기를 9로 통일 (textfont size=9)
     fig_all_months.update_traces(
         text=[f"{v:.2f}" for v in monthly_summary_12m["Total_Distance"]],
         textposition="outside",
@@ -433,7 +437,6 @@ if not df_all.empty:
         textfont=dict(size=9, color="#475569", family="Pretendard")
     )
     
-    # 200km 기준선(점선) 추가 (문구 제거)
     fig_all_months.add_hline(
         y=GOAL_KM, 
         line_dash="dot", 
