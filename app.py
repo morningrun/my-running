@@ -355,11 +355,12 @@ merged_current["Date_Label"] = [str(int(d.split("-")[2])) for d in merged_curren
 fig_curr = px.bar(merged_current, x="Date_Label", y="Distance")
 fig_curr.update_traces(
     text=[f"{v:.2f}" if v > 0 else "" for v in merged_current["Distance"]],
+    texttemplate="%{text}",
     textposition="outside",
     marker_color="#0284C7",
     cliponaxis=False,
     hoverinfo="none",
-    textfont=dict(size=11, color="#0F172A", family="Pretendard", weight="bold")
+    textfont=dict(size=10, color="#0F172A", family="Pretendard", weight="bold")
 )
 
 tick_vals_list = [str(d) for d in range(1, last_day + 1) if (d - 1) % 3 == 0 or d == last_day]
@@ -371,7 +372,6 @@ fig_curr.update_layout(
     yaxis_title=None,
     plot_bgcolor="rgba(0,0,0,0)",
     paper_bgcolor="rgba(0,0,0,0)",
-    uniformtext=dict(mode="hide", minsize=11),  # minfontsize -> minsize 로 수정 완료
     xaxis=dict(
         fixedrange=True, 
         showgrid=False, 
@@ -426,11 +426,12 @@ if not df_all.empty:
     )
     
     fig_all_months.update_traces(
+        texttemplate="%{text}",
         marker_color=monthly_summary_12m["Color"],
         textposition="outside",
         cliponaxis=False,
         hoverinfo="none",
-        textfont=dict(size=11, color="#0F172A", family="Pretendard", weight="bold")
+        textfont=dict(size=10, color="#0F172A", family="Pretendard", weight="bold")
     )
     
     fig_all_months.add_hline(
@@ -441,14 +442,13 @@ if not df_all.empty:
     )
 
     fig_all_months.update_layout(
-        margin=dict(l=10, r=10, t=45, b=0),
-        height=210,
+        margin=dict(l=15, r=15, t=45, b=0),
+        height=220,
         xaxis_title=None,
         yaxis_title=None,
         showlegend=False,
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
-        uniformtext=dict(mode="hide", minsize=11),  # minfontsize -> minsize 로 수정 완료
         xaxis=dict(fixedrange=True, showgrid=False, tickfont=dict(size=10, color="#64748B")),
         yaxis=dict(fixedrange=True, showgrid=True, gridcolor="#E2E8F0", tickfont=dict(size=10, color="#64748B"), rangemode="tozero"),
         font=dict(size=10, color="#475569")
