@@ -57,19 +57,20 @@ st.markdown("""
         padding: 0 4px;
     }
     
-    /* 상단 타이틀 크기 및 그라데이션 컬러 적용 */
+    /* 상단 타이틀 한 줄 배치 및 모바일 밸런스 최적화 크기 */
     .crew-title {
-        font-size: 1.8rem !important;
+        font-size: 1.45rem !important;
         font-weight: 900;
-        letter-spacing: -0.8px;
+        letter-spacing: -0.6px;
         background: linear-gradient(135deg, #0F172A 0%, #0284C7 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         margin: 0;
+        white-space: nowrap;
     }
 
     .crew-subtitle {
-        font-size: 0.78rem;
+        font-size: 0.75rem;
         color: #64748B;
         font-weight: 600;
         background: #FFFFFF;
@@ -79,6 +80,7 @@ st.markdown("""
         display: flex;
         align-items: center;
         gap: 5px;
+        white-space: nowrap;
     }
 
     .hero-card {
@@ -215,7 +217,7 @@ current_weekday = week_days[now.weekday()]
 date_text = f"{year}.{month_num}.{current_day:02d} ({current_weekday})"
 calendar_icon_html = f"🗓️"
 
-# 상단 헤더 출력
+# 상단 헤더 출력 (이실권 200CREW 한 줄 배치)
 header_html = """
     <div class="crew-header">
         <div class="crew-title">이실권 200CREW</div>
@@ -281,7 +283,7 @@ hero_html = """
 )
 st.markdown(hero_html, unsafe_allow_html=True)
 
-# 2. 프로그레스 바
+# 2. 프로그레스 바 (100% 초과 반영)
 st.progress(min(1.0, progress))
 if progress > 1.0:
     st.caption(f"🔥 목표 달성 완료! 현재 {percent}% 달성 중 (총 {run_count}회)")
