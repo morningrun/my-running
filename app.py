@@ -387,22 +387,34 @@ if not df_all.empty:
 
     monthly_summary_12m = monthly_summary_full.sort_values("Month", ascending=False).head(12).sort_values("Month")
 
+    # X축 표시용 포맷 변환 컬럼 추가 (예: "2026-03" -> "26-3월")
+    def format_month_label(m_str):
+        parts = m_str.split("-")
+        if len(parts) == 2:
+            yy = parts[0][2:]  # 연도 뒤 두 자리 (예: '26')
+            mm = int(parts[1]) # 월 (예: 3)
+            return f"{yy}-{mm}월"
+        return m_str
+
+    monthly_summary_12m["Month_Label"] = monthly_summary_12m["Month"].apply(format_month_label)
+    monthly_summary_full["Month_Label"] = monthly_summary_full["Month"].apply(format_month_label)
+
     monthly_summary_12m["Color"] = monthly_summary_12m["Total_Distance"].apply(
         lambda x: "#1E3A8A" if x >= GOAL_KM else "#94A3B8"
     )
 
     st.markdown("<p style='font-size:1.1rem; font-weight:900; color:#0F172A; margin-bottom:12px;'>📈 최근 12개월 운동 현황 비교</p>", unsafe_allow_html=True)
 
-    # 텍스트 명시적 지정 (자동 생성 text_auto 제거)
+    # X축에 변환된 "Month_Label" 컬럼 적용
     fig_all_months = px.bar(
         monthly_summary_12m,
-        x="Month",
+        x="Month_Label",
         y="Total_Distance",
         color="Color",
         color_discrete_map="identity"
     )
     
-    # 폰트 크기, 색상, 위치를 명시적으로 통일
+    # 두 그래프 모두 상단 글씨 크기를 9로 통일 (textfont size=9)
     fig_all_months.update_traces(
         text=[f"{v:.2f}" for v in monthly_summary_12m["Total_Distance"]],
         textposition="outside",
@@ -437,7 +449,7 @@ if not df_all.empty:
     st.markdown("<p style='font-size:0.85rem; font-weight:800; color:#334155; margin-bottom:6px;'>📋 전체 월별 상세 기록 요약</p>", unsafe_allow_html=True)
     
     display_df = monthly_summary_full.rename(columns={
-        "Month": "조회 월",
+        "Month_Label": "조회 월",
         "Total_Distance": "총 거리 (km)",
         "Run_Count": "러닝 횟수"
     }).sort_values("조회 월", ascending=False).reset_index(drop=True)
