@@ -335,7 +335,7 @@ sub_cards_html = """
 )
 st.markdown(sub_cards_html, unsafe_allow_html=True)
 
-# 4. 이번 달 일별 차트
+# 4. 이번 달 일별 차트 (너비를 넓혀서 글씨가 겹치지 않도록 수정)
 current_month_title_str = f"📊 {now.month}월 운동 현황"
 st.markdown(f"<p style='font-size:1.1rem; font-weight:900; color:#0F172A; margin-bottom:12px;'>{current_month_title_str}</p>", unsafe_allow_html=True)
 
@@ -350,23 +350,25 @@ else:
     merged_current = full_dates_df_current
     merged_current["Distance"] = 0.0
 
-merged_current["Date_Label"] = [str(int(d.split("-")[2])) for d in merged_current["Date"]]
+merged_current["Date_Label"] = [f"{int(d.split('-')[2])}일" for d in merged_current["Date"]]
 
 fig_curr = px.bar(merged_current, x="Date_Label", y="Distance")
 fig_curr.update_traces(
-    text=[f"{v:.2f}" if v > 0 else "" for v in merged_current["Distance"]],
+    text=[f"{v:.1f}" if v > 0 else "" for v in merged_current["Distance"]],
     textposition="outside",
     marker_color="#0284C7",
     cliponaxis=False,
     hoverinfo="none",
-    textfont=dict(size=14, color="#0F172A", family="Pretendard", weight="bold")
+    textfont=dict(size=12, color="#0F172A", family="Pretendard", weight="bold")
 )
 
-tick_vals_list = [str(d) for d in range(1, last_day + 1) if (d - 1) % 3 == 0 or d == last_day]
+# 날짜가 많으므로 모든 날짜 틱 라벨 표시
+tick_vals_list = [f"{d}일" for d in range(1, last_day + 1)]
 
 fig_curr.update_layout(
-    margin=dict(l=0, r=0, t=35, b=0),
-    height=180,
+    width=max(700, last_day * 25),  # 가로 폭을 넉넉하게 강제 지정하여 칸 확보
+    margin=dict(l=10, r=10, t=40, b=10),
+    height=210,
     xaxis_title=None,
     yaxis_title=None,
     plot_bgcolor="rgba(0,0,0,0)",
@@ -382,7 +384,11 @@ fig_curr.update_layout(
     yaxis=dict(fixedrange=True, showgrid=True, gridcolor="#E2E8F0", tickfont=dict(size=10, color="#64748B")),
     font=dict(size=10, color="#475569")
 )
-st.plotly_chart(fig_curr, use_container_width=True, key="chart_current_month", config={'displayModeBar': False, 'scrollZoom': False, 'staticPlot': True})
+
+# Streamlit에 가로 스크롤 가능하도록 감싸서 출력
+st.markdown('<div style="overflow-x: auto; width: 100%;">', unsafe_allow_html=True)
+st.plotly_chart(fig_curr, use_container_width=False, key="chart_current_month", config={'displayModeBar': False, 'scrollZoom': False, 'staticPlot': True})
+st.markdown('</div>', unsafe_allow_html=True)
 
 
 # ==========================================
@@ -429,7 +435,7 @@ if not df_all.empty:
         textposition="outside",
         cliponaxis=False,
         hoverinfo="none",
-        textfont=dict(size=14, color="#0F172A", family="Pretendard", weight="bold")
+        textfont=dict(size=12, color="#0F172A", family="Pretendard", weight="bold")
     )
     
     fig_all_months.add_hline(
