@@ -27,7 +27,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# 2. 화면 스타일 CSS (Streamlit 기본 하단 메뉴/로고 숨김 처리 추가)
+# 2. 화면 스타일 CSS
 st.markdown("""
     <style>
     @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -37,12 +37,6 @@ st.markdown("""
     }
 
     header {visibility: hidden;}
-    
-    /* Streamlit 하단 메뉴, 배지, 앱 메뉴 버튼 숨기기 */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    .stDeployButton {display: none;}
-    [data-testid="stStatusWidget"] {visibility: hidden;}
     
     .stApp {
         background-color: #F8FAFC;
@@ -179,7 +173,7 @@ ATHLETE_ID = st.secrets["INTERVALS_ATHLETE_ID"]
 KST = ZoneInfo("Asia/Seoul")
 now = datetime.now(KST)
 
-# 4. 데이터 로딩 (한국 시간 기준 이번 달 1일 러닝 기록 조회)
+# 4. 데이터 로딩 (올해 1월 1일 이후 전체 데이터 조회)
 @st.cache_data(ttl=300)
 def fetch_running_data(start_date_str):
     url = f"https://intervals.icu/api/v1/athlete/{ATHLETE_ID}/activities?oldest={start_date_str}"
@@ -188,10 +182,10 @@ def fetch_running_data(start_date_str):
         return response.json()
     return []
 
-start_date = now.strftime("%Y-%m-01")
-activities = fetch_running_data(start_date)
+current_year_start = f"{now.strftime('%Y')}-01-01"
+activities = fetch_running_data(current_year_start)
 
-# 5. 데이터 전처리 (소수점 둘째 자리까지 정밀 유지)
+# 5. 데이터 전처리
 running_records = []
 if activities:
     for act in activities:
@@ -203,22 +197,18 @@ if activities:
                 "Distance": distance_km
             })
 
-df = pd.DataFrame(running_records)
+df_all = pd.DataFrame(running_records)
+if not df_all.empty:
+    df_all["Month"] = df_all["Date"].str[:7] # 'YYYY-MM' 형식 추출
 
-# 한국 시간 기준 날짜 및 요일 연동 계산
+# 날짜 및 요일 연동 계산
 year = now.strftime("%Y")
 month_num = now.strftime("%m")
 current_day = now.day
 week_days = ['월', '화', '수', '목', '금', '토', '일']
 current_weekday = week_days[now.weekday()]
 date_text = f"{year}.{month_num}.{current_day:02d} ({current_weekday})"
-
 calendar_icon_html = f"🗓️"
-
-days_in_month = calendar.monthrange(now.year, now.month)[1]
-remaining_days = max(1, days_in_month - current_day + 1)
-
-GOAL_KM = 200.0
 
 # 상단 헤더 출력
 header_html = """
@@ -229,120 +219,175 @@ header_html = """
 """.format(cal_icon=calendar_icon_html, date_str=date_text)
 st.markdown(header_html, unsafe_allow_html=True)
 
-if not df.empty:
-    total_km = round(df["Distance"].sum(), 2)
-    run_count = len(df)
+# 이번 달(현재) 데이터 필터링
+current_month_str = now.strftime("%Y-%m")
+df_current = df_all[df_all["Month"] == current_month_str] if not df_all.empty else pd.DataFrame()
+
+days_in_month = calendar.monthrange(now.year, now.month)[1]
+remaining_days = max(1, days_in_month - current_day + 1)
+GOAL_KM = 200.0
+
+if not df_current.empty:
+    total_km = round(df_current["Distance"].sum(), 2)
+    run_count = len(df_current)
     remaining_km = max(0.0, round(GOAL_KM - total_km, 2))
     progress = min(1.0, total_km / GOAL_KM)
     percent = round(progress * 100, 1)
     
     daily_required_km = round(remaining_km / remaining_days, 2) if remaining_km > 0 else 0.0
     expected_total_km = round((total_km / current_day) * days_in_month, 2)
+else:
+    total_km, run_count, remaining_km, progress, percent = 0.0, 0, GOAL_KM, 0.0, 0.0
+    daily_required_km = round(GOAL_KM / days_in_month, 2)
+    expected_total_km = 0.0
 
-    # 마스코트 이미지 출력 세팅
-    if mascot_base64:
-        mascot_html = f'<img src="data:image/png;base64,{mascot_base64}" style="width: 56px; height: 56px; border-radius: 50%; border: 2px solid #38BDF8; object-fit: contain; background-color: #FFFFFF; padding: 3px; display: block; margin-left: auto;">'
-    else:
-        mascot_html = '<span style="font-size: 1.8rem; display: block; text-align: right;">🏃💨</span>'
+# 마스코트 이미지 출력 세팅
+if mascot_base64:
+    mascot_html = f'<img src="data:image/png;base64,{mascot_base64}" style="width: 56px; height: 56px; border-radius: 50%; border: 2px solid #38BDF8; object-fit: contain; background-color: #FFFFFF; padding: 3px; display: block; margin-left: auto;">'
+else:
+    mascot_html = '<span style="font-size: 1.8rem; display: block; text-align: right;">🏃💨</span>'
 
-    # 1. 메인 히어로 카드
-    hero_html = """
-        <div class="hero-card">
-            <!-- 상단: 월간 목표 및 마스코트 -->
-            <div class="hero-top-row">
-                <div>
-                    <span class="hero-goal-title">🎯 월간 목표</span>
-                    <span class="hero-goal-target" style="margin-left: 8px;">{goal} km</span>
-                </div>
-                <div style="width: 56px;">{mascot}</div>
+# 1. 메인 히어로 카드 (이번 달 현황)
+hero_html = """
+    <div class="hero-card">
+        <div class="hero-top-row">
+            <div>
+                <span class="hero-goal-title">🎯 이번 달 월간 목표</span>
+                <span class="hero-goal-target" style="margin-left: 8px;">{goal} km</span>
             </div>
-            <!-- 하단: 현재 누적 거리 및 달성률 -->
-            <div class="hero-bottom-row">
-                <div>
-                    <span class="hero-km-highlight">{total:.2f}</span>
-                    <span class="hero-km-label">km 달성</span>
-                </div>
-                <div>
-                    <div class="hero-percent-tag">{pct}%</div>
-                </div>
-            </div>
+            <div style="width: 56px;">{mascot}</div>
         </div>
-    """.format(
-        mascot=mascot_html,
-        total=total_km,
-        goal=int(GOAL_KM),
-        pct=percent
-    )
-    st.markdown(hero_html, unsafe_allow_html=True)
-
-    # 2. 프로그레스 바
-    st.progress(progress)
-    st.caption(f"🔥 이번 달 총 {run_count}회 달리셨어요!")
-
-    st.write("")
-
-    # 3. 서브 카드 출력
-    sub_cards_html = """
-    <div class="grid-container">
-        <div class="sub-card">
-            <div class="sub-card-header">
-                <span class="sub-icon">🎯</span>
-                <span class="sub-label">남은 거리</span>
+        <div class="hero-bottom-row">
+            <div>
+                <span class="hero-km-highlight">{total:.2f}</span>
+                <span class="hero-km-label">km 달성</span>
             </div>
-            <div class="sub-value sub-accent">{rem_km:.2f} km</div>
-        </div>
-        <div class="sub-card">
-            <div class="sub-card-header">
-                <span class="sub-icon">⚡</span>
-                <span class="sub-label">예상 하루 운동 거리</span>
+            <div>
+                <div class="hero-percent-tag">{pct}%</div>
             </div>
-            <div class="sub-value">{daily_km:.2f} km</div>
-        </div>
-        <div class="sub-card">
-            <div class="sub-card-header">
-                <span class="sub-icon">⏳</span>
-                <span class="sub-label">남은 기간</span>
-            </div>
-            <div class="sub-value">{rem_days} 일</div>
-        </div>
-        <div class="sub-card">
-            <div class="sub-card-header">
-                <span class="sub-icon">📈</span>
-                <span class="sub-label">월 예상 거리</span>
-            </div>
-            <div class="sub-value">{exp_km:.2f} km</div>
         </div>
     </div>
-    """.format(
-        rem_km=remaining_km,
-        daily_km=daily_required_km,
-        rem_days=remaining_days,
-        exp_km=expected_total_km
+""".format(
+    mascot=mascot_html,
+    total=total_km,
+    goal=int(GOAL_KM),
+    pct=percent
+)
+st.markdown(hero_html, unsafe_allow_html=True)
+
+# 2. 프로그레스 바
+st.progress(progress)
+st.caption(f"🔥 이번 달 총 {run_count}회 달리셨어요!")
+st.write("")
+
+# 3. 서브 카드 출력
+sub_cards_html = """
+<div class="grid-container">
+    <div class="sub-card">
+        <div class="sub-card-header">
+            <span class="sub-icon">🎯</span>
+            <span class="sub-label">남은 거리</span>
+        </div>
+        <div class="sub-value sub-accent">{rem_km:.2f} km</div>
+    </div>
+    <div class="sub-card">
+        <div class="sub-card-header">
+            <span class="sub-icon">⚡</span>
+            <span class="sub-label">예상 하루 운동 거리</span>
+        </div>
+        <div class="sub-value">{daily_km:.2f} km</div>
+    </div>
+    <div class="sub-card">
+        <div class="sub-card-header">
+            <span class="sub-icon">⏳</span>
+            <span class="sub-label">남은 기간</span>
+        </div>
+        <div class="sub-value">{rem_days} 일</div>
+    </div>
+    <div class="sub-card">
+        <div class="sub-card-header">
+            <span class="sub-icon">📈</span>
+            <span class="sub-label">월 예상 거리</span>
+        </div>
+        <div class="sub-value">{exp_km:.2f} km</div>
+    </div>
+</div>
+""".format(
+    rem_km=remaining_km,
+    daily_km=daily_required_km,
+    rem_days=remaining_days,
+    exp_km=expected_total_km
+)
+st.markdown(sub_cards_html, unsafe_allow_html=True)
+
+# 4. 이번 달 일별 차트 (1일부터 말일까지 전체 날짜 표시)
+st.markdown("<p style='font-size:0.82rem; font-weight:800; color:#334155; margin-bottom:6px;'>📊 이번 달 일별 운동 거리 (km)</p>", unsafe_allow_html=True)
+
+_, last_day = calendar.monthrange(now.year, now.month)
+all_dates_current = [f"{now.year}-{now.month:02d}-{day:02d}" for day in range(1, last_day + 1)]
+full_dates_df_current = pd.DataFrame({"Date": all_dates_current})
+
+if not df_current.empty:
+    daily_df_current = df_current.groupby("Date", as_index=False)["Distance"].sum()
+    merged_current = pd.merge(full_dates_df_current, daily_df_current, on="Date", how="left").fillna(0)
+else:
+    merged_current = full_dates_df_current
+    merged_current["Distance"] = 0.0
+
+fig_curr = px.bar(merged_current, x="Date", y="Distance", text_auto=".2f")
+fig_curr.update_traces(
+    marker_color="#0284C7",
+    textposition="outside",
+    cliponaxis=False,
+    hoverinfo="none"
+)
+fig_curr.for_each_trace(lambda t: t.update(text=[v if v > 0 else "" for v in t.y]))
+fig_curr.update_layout(
+    margin=dict(l=0, r=0, t=25, b=0),
+    height=160,
+    xaxis_title=None,
+    yaxis_title=None,
+    plot_bgcolor="rgba(0,0,0,0)",
+    paper_bgcolor="rgba(0,0,0,0)",
+    xaxis=dict(fixedrange=True, showgrid=False, tickfont=dict(size=8, color="#64748B")),
+    yaxis=dict(fixedrange=True, showgrid=True, gridcolor="#E2E8F0", tickfont=dict(size=9, color="#64748B")),
+    font=dict(size=10, color="#475569")
+)
+st.plotly_chart(fig_curr, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False, 'staticPlot': True})
+
+
+# ==========================================
+# 5. [확장] 전체 월별 현황 한눈에 보기 섹션
+# ==========================================
+st.markdown("<hr style='margin: 30px 0 20px 0; border: none; border-top: 1px solid #E2E8F0;'>", unsafe_allow_html=True)
+st.markdown("<p style='font-size:1.1rem; font-weight:900; color:#0F172A; margin-bottom:12px;'>📈 전체 월별 운동 현황 비교</p>", unsafe_allow_html=True)
+
+if not df_all.empty:
+    # 월별 총 거리 및 횟수 집계
+    monthly_summary = df_all.groupby("Month", as_index=False).agg(
+        Total_Distance=("Distance", "sum"),
+        Run_Count=("Distance", "count")
     )
-    st.markdown(sub_cards_html, unsafe_allow_html=True)
+    monthly_summary["Total_Distance"] = monthly_summary["Total_Distance"].round(2)
+    monthly_summary = monthly_summary.sort_values("Month") # 오름차순 (시간순) 정렬
 
-    # 4. 차트
-    st.markdown("<p style='font-size:0.82rem; font-weight:800; color:#334155; margin-bottom:6px;'>📊 일별 운동 거리 (km)</p>", unsafe_allow_html=True)
-    
-    daily_df = df.groupby("Date", as_index=False)["Distance"].sum()
-
-    fig = px.bar(
-        daily_df,
-        x="Date",
-        y="Distance",
+    # 전체 월별 누적 거리 비교 바 차트
+    fig_all_months = px.bar(
+        monthly_summary,
+        x="Month",
+        y="Total_Distance",
+        text="Total_Distance",
         text_auto=".2f"
     )
-    
-    fig.update_traces(
-        marker_color="#0284C7",
+    fig_all_months.update_traces(
+        marker_color="#0F172A",
         textposition="outside",
         cliponaxis=False,
         hoverinfo="none"
     )
-    
-    fig.update_layout(
-        margin=dict(l=0, r=0, t=15, b=0),
-        height=150,
+    fig_all_months.update_layout(
+        margin=dict(l=0, r=0, t=25, b=0),
+        height=180,
         xaxis_title=None,
         yaxis_title=None,
         plot_bgcolor="rgba(0,0,0,0)",
@@ -351,8 +396,59 @@ if not df.empty:
         yaxis=dict(fixedrange=True, showgrid=True, gridcolor="#E2E8F0", tickfont=dict(size=9, color="#64748B")),
         font=dict(size=10, color="#475569")
     )
+    st.plotly_chart(fig_all_months, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False, 'staticPlot': True})
+
+    st.write("")
+    st.markdown("<p style='font-size:0.85rem; font-weight:800; color:#334155; margin-bottom:6px;'>📋 월별 상세 기록 요약</p>", unsafe_allow_html=True)
     
-    st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False, 'staticPlot': True})
+    # 보기 좋게 데이터프레임 가공
+    display_df = monthly_summary.rename(columns={
+        "Month": "조회 월",
+        "Total_Distance": "총 거리 (km)",
+        "Run_Count": "러닝 횟수"
+    }).sort_values("조회 월", ascending=False).reset_index(drop=True)
+    
+    # 200km 목표 대비 달성률 컬럼 추가
+    display_df["목표 달성률"] = (display_df["총 거리 (km)"] / GOAL_KM * 100).round(1).astype(str) + "%"
+    
+    # 테이블 출력
+    st.dataframe(display_df, use_container_width=True, hide_index=True)
+
+    # 개별 월 상세 확인용 셀렉트박스도 함께 제공
+    st.write("")
+    st.markdown("<p style='font-size:0.85rem; font-weight:800; color:#334155; margin-bottom:6px;'>🔍 특정 월 상세 일별 그래프 보기</p>", unsafe_allow_html=True)
+    available_months = sorted(df_all["Month"].unique(), reverse=True)
+    selected_month = st.selectbox("확인할 월 선택", available_months, index=0, label_visibility="collapsed")
+    
+    df_selected = df_all[df_all["Month"] == selected_month]
+    sel_year, sel_mon = map(int, selected_month.split("-"))
+    _, sel_last_day = calendar.monthrange(sel_year, sel_mon)
+    
+    all_dates_sel = [f"{sel_year}-{sel_mon:02d}-{day:02d}" for day in range(1, sel_last_day + 1)]
+    full_dates_df_sel = pd.DataFrame({"Date": all_dates_sel})
+    daily_df_sel = df_selected.groupby("Date", as_index=False)["Distance"].sum()
+    merged_sel = pd.merge(full_dates_df_sel, daily_df_sel, on="Date", how="left").fillna(0)
+    
+    fig_sel = px.bar(merged_sel, x="Date", y="Distance", text_auto=".2f")
+    fig_sel.update_traces(
+        marker_color="#0284C7",
+        textposition="outside",
+        cliponaxis=False,
+        hoverinfo="none"
+    )
+    fig_sel.for_each_trace(lambda t: t.update(text=[v if v > 0 else "" for v in t.y]))
+    fig_sel.update_layout(
+        margin=dict(l=0, r=0, t=25, b=0),
+        height=160,
+        xaxis_title=None,
+        yaxis_title=None,
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+        xaxis=dict(fixedrange=True, showgrid=False, tickfont=dict(size=8, color="#64748B")),
+        yaxis=dict(fixedrange=Y, showgrid=True, gridcolor="#E2E8F0", tickfont=dict(size=9, color="#64748B")),
+        font=dict(size=10, color="#475569")
+    )
+    st.plotly_chart(fig_sel, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False, 'staticPlot': True})
 
 else:
-    st.info("이번 달 등록된 러닝 기록이 없습니다.")
+    st.info("조회 가능한 러닝 기록이 없습니다.")
