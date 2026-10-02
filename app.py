@@ -307,7 +307,7 @@ hero_html = f"""
         </div>
         <div class="hero-bottom-row">
             <div>
-                <span class="hero-km-highlight">{total_km:.2f}</span>
+                <span class="hero-km-highlight">{total_km:.1f}</span>
                 <span class="hero-km-label">km 달성</span>
             </div>
             <div>
@@ -334,14 +334,14 @@ sub_cards_html = f"""
             <span class="sub-icon">🎯</span>
             <span class="sub-label">남은 거리</span>
         </div>
-        <div class="sub-value sub-value-large sub-accent">{remaining_km:.2f} km</div>
+        <div class="sub-value sub-value-large sub-accent">{remaining_km:.1f} km</div>
     </div>
     <div class="sub-card">
         <div class="sub-card-header">
             <span class="sub-icon">⚡</span>
             <span class="sub-label">예상 하루 운동 거리</span>
         </div>
-        <div class="sub-value">{daily_required_km:.2f} km</div>
+        <div class="sub-value">{daily_required_km:.1f} km</div>
     </div>
     <div class="sub-card">
         <div class="sub-card-header">
@@ -355,7 +355,7 @@ sub_cards_html = f"""
             <span class="sub-icon">📈</span>
             <span class="sub-label">월 예상 거리</span>
         </div>
-        <div class="sub-value">{expected_total_km:.2f} km</div>
+        <div class="sub-value">{expected_total_km:.1f} km</div>
     </div>
 </div>
 """
@@ -485,10 +485,10 @@ fig_all_months.add_hline(
     line_width=1.5
 )
 
-# [수정] 폰트 크기를 8로 더 줄이고, y축 상단 공간을 확보하여 겹침 현상 원천 차단
+# [수정] 소수점 한 자리로 변경하여 글자 길이 단축 (`:.1f`)
 annotations_list = []
 for idx, row in monthly_summary_12m.iterrows():
-    val_str = f"{row['Total_Distance']:.2f}"
+    val_str = f"{row['Total_Distance']:.1f}" # 소수점 두 자리에서 한 자리로 축소
     annotations_list.append(dict(
         x=row["Month_Label"],
         y=row["Total_Distance"],
@@ -497,12 +497,12 @@ for idx, row in monthly_summary_12m.iterrows():
         xanchor="center",
         yanchor="bottom",
         yshift=2,
-        font=dict(size=8, color="#0F172A", family="Pretendard") # 폰트 크기를 8로 축소
+        font=dict(size=9, color="#0F172A", family="Pretendard") # 폰트 크기는 보기 좋게 9로 유지
     ))
 
 fig_all_months.update_layout(
     annotations=annotations_list,
-    margin=dict(l=10, r=10, t=50, b=0), # 상단 여백을 50으로 넉넉하게 늘려 글씨나 점선이 잘리지 않게 조정
+    margin=dict(l=10, r=10, t=40, b=0),
     height=220,
     xaxis_title=None,
     yaxis_title=None,
@@ -524,9 +524,9 @@ st.plotly_chart(fig_all_months, use_container_width=True, key="chart_all_months"
 st.write("")
 st.markdown("<p style='font-size:1.1rem; font-weight:900; color:#0F172A; margin-bottom:10px;'>📋 월별 현황 요약</p>", unsafe_allow_html=True)
 
-# 월별 현황 요약 테이블 데이터 가공
+# 월별 현황 요약 테이블 데이터 가공 (테이블도 소수점 한 자리로 통일감 부여)
 display_df = monthly_summary_12m.sort_values("Month", ascending=False).copy()
-display_df["총 거리 (km)"] = display_df["Total_Distance"].apply(lambda x: f"{x:.2f}")
+display_df["총 거리 (km)"] = display_df["Total_Distance"].apply(lambda x: f"{x:.1f}")
 display_df["러닝 횟수"] = display_df["Run_Count"].astype(str) + "회"
 display_df["목표 달성률"] = (display_df["Total_Distance"] / GOAL_KM * 100).round(1).astype(str) + "%"
 
