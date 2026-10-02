@@ -466,21 +466,17 @@ monthly_summary_12m["Color"] = monthly_summary_12m["Total_Distance"].apply(
 
 st.markdown("<p style='font-size:1.1rem; font-weight:900; color:#0F172A; margin-bottom:12px;'>📈 최근 12개월 운동 현황</p>", unsafe_allow_html=True)
 
+# 바 차트 생성 (기본 외부 텍스트 대신 annotations 방식을 쓰기 위해 text 속성 제거)
 fig_all_months = px.bar(
     monthly_summary_12m,
     x="Month_Label",
-    y="Total_Distance",
-    text=monthly_summary_12m["Total_Distance"].apply(lambda v: f"{v:.2f}")
+    y="Total_Distance"
 )
 
-# [수정 포인트] 모바일 가독성 및 폰트 크기 비율 동기화를 위한 설정 보정 (autosize 비활성화 및 상단 여백 최적화)
 fig_all_months.update_traces(
-    texttemplate="%{text}",
     marker_color=monthly_summary_12m["Color"],
-    textposition="outside",
     cliponaxis=False,
-    hoverinfo="none",
-    textfont=dict(size=9.5, color="#0F172A", family="Pretendard")
+    hoverinfo="none"
 )
 
 fig_all_months.add_hline(
@@ -490,24 +486,39 @@ fig_all_months.add_hline(
     line_width=1.5
 )
 
+# [핵심 수정] X축 폰트 크기(size=10)와 완벽히 동일한 어노테이션(텍스트)을 각 막대 상단에 강제 수동 배치
+annotations_list = []
+for idx, row in monthly_summary_12m.iterrows():
+    val_str = f"{row['Total_Distance']:.2f}"
+    annotations_list.append(dict(
+        x=row["Month_Label"],
+        y=row["Total_Distance"],
+        text=val_str,
+        showarrow=False,
+        xanchor="center",
+        yanchor="bottom",
+        yshift=4,  # 막대 바로 위에 위치하도록 미세 조정
+        font=dict(size=10, color="#0F172A", family="Pretendard") # X축 글씨 크기와 정확히 일치 (size=10)
+    ))
+
 fig_all_months.update_layout(
-    autosize=True,
-    margin=dict(l=10, r=10, t=45, b=0),  # 상단 여백을 늘려 거리 텍스트가 잘리지 않게 조정
-    height=240,                           # 모바일에서 막대와 텍스트가 겹치지 않도록 높이 소폭 상향
+    annotations=annotations_list,
+    margin=dict(l=10, r=10, t=35, b=0),
+    height=220,
     xaxis_title=None,
     yaxis_title=None,
     showlegend=False,
     plot_bgcolor="rgba(0,0,0,0)",
     paper_bgcolor="rgba(0,0,0,0)",
-    xaxis=dict(fixedrange=True, showgrid=False, tickfont=dict(size=9.5, color="#64748B")),
+    xaxis=dict(fixedrange=True, showgrid=False, tickfont=dict(size=10, color="#64748B")), # X축 폰트 size=10 고정
     yaxis=dict(
         fixedrange=True, 
         showgrid=True, 
         gridcolor="#E2E8F0", 
-        tickfont=dict(size=9.5, color="#64748B"), 
+        tickfont=dict(size=10, color="#64748B"), 
         rangemode="tozero"
     ),
-    font=dict(size=9.5, color="#475569")
+    font=dict(size=10, color="#475569")
 )
 st.plotly_chart(fig_all_months, use_container_width=True, key="chart_all_months", config={'displayModeBar': False, 'scrollZoom': False, 'staticPlot': True})
 
