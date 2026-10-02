@@ -295,7 +295,7 @@ else:
 
 dynamic_goal_title = f"🎯 {now.strftime('%y년 %m월')} 목표"
 
-# 1. 메인 히어로 카드 (소수점 둘째 자리 반영)
+# 1. 메인 히어로 카드 (소수점 둘째 자리 유지)
 hero_html = f"""
     <div class="hero-card">
         <div class="hero-top-row">
@@ -326,7 +326,7 @@ else:
     st.markdown(f"<p style='font-size:0.85rem; font-weight:800; color:#0F172A; margin-top:4px;'>🔥 이번 달 총 {run_count}회 달리셨어요!</p>", unsafe_allow_html=True)
 st.write("")
 
-# 3. 서브 카드 출력 (소수점 둘째 자리 반영)
+# 3. 서브 카드 출력 (소수점 둘째 자리 유지)
 sub_cards_html = f"""
 <div class="grid-container">
     <div class="sub-card">
@@ -415,7 +415,7 @@ st.plotly_chart(fig_curr, use_container_width=True, key="chart_current_month", c
 
 
 # ==========================================
-# 5. 월별 현황 섹션 (소수점 둘째 자리 반영)
+# 5. 월별 현황 섹션 (최근 12개월 차트만 소수점 한 자리 적용)
 # ==========================================
 st.markdown("<hr style='margin: 25px 0 15px 0; border: none; border-top: 1px solid #E2E8F0;'>", unsafe_allow_html=True)
 
@@ -487,7 +487,7 @@ fig_all_months.add_hline(
 
 annotations_list = []
 for idx, row in monthly_summary_12m.iterrows():
-    val_str = f"{row['Total_Distance']:.2f}"  # 차트 상단 숫자를 소수점 둘째 자리로 변경
+    val_str = f"{row['Total_Distance']:.1f}"  # 🔥 최근 12개월 차트 상단 숫자를 소수점 한 자리로 변경
     annotations_list.append(dict(
         x=row["Month_Label"],
         y=row["Total_Distance"],
@@ -523,7 +523,7 @@ st.plotly_chart(fig_all_months, use_container_width=True, key="chart_all_months"
 st.write("")
 st.markdown("<p style='font-size:1.1rem; font-weight:900; color:#0F172A; margin-bottom:10px;'>📋 월별 현황 요약</p>", unsafe_allow_html=True)
 
-# 월별 현황 요약 테이블 데이터 가공 (소수점 둘째 자리 반영)
+# 월별 현황 요약 테이블 데이터 가공 (여기는 소수점 둘째 자리 유지)
 display_df = monthly_summary_12m.sort_values("Month", ascending=False).copy()
 display_df["총 거리 (km)"] = display_df["Total_Distance"].apply(lambda x: f"{x:.2f}")
 display_df["러닝 횟수"] = display_df["Run_Count"].astype(str) + "회"
