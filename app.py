@@ -295,7 +295,7 @@ else:
 
 dynamic_goal_title = f"🎯 {now.strftime('%y년 %m월')} 목표"
 
-# 1. 메인 히어로 카드
+# 1. 메인 히어로 카드 (소수점 둘째 자리 반영)
 hero_html = f"""
     <div class="hero-card">
         <div class="hero-top-row">
@@ -307,7 +307,7 @@ hero_html = f"""
         </div>
         <div class="hero-bottom-row">
             <div>
-                <span class="hero-km-highlight">{total_km:.1f}</span>
+                <span class="hero-km-highlight">{total_km:.2f}</span>
                 <span class="hero-km-label">km 달성</span>
             </div>
             <div>
@@ -326,7 +326,7 @@ else:
     st.markdown(f"<p style='font-size:0.85rem; font-weight:800; color:#0F172A; margin-top:4px;'>🔥 이번 달 총 {run_count}회 달리셨어요!</p>", unsafe_allow_html=True)
 st.write("")
 
-# 3. 서브 카드 출력
+# 3. 서브 카드 출력 (소수점 둘째 자리 반영)
 sub_cards_html = f"""
 <div class="grid-container">
     <div class="sub-card">
@@ -334,14 +334,14 @@ sub_cards_html = f"""
             <span class="sub-icon">🎯</span>
             <span class="sub-label">남은 거리</span>
         </div>
-        <div class="sub-value sub-value-large sub-accent">{remaining_km:.1f} km</div>
+        <div class="sub-value sub-value-large sub-accent">{remaining_km:.2f} km</div>
     </div>
     <div class="sub-card">
         <div class="sub-card-header">
             <span class="sub-icon">⚡</span>
             <span class="sub-label">예상 하루 운동 거리</span>
         </div>
-        <div class="sub-value">{daily_required_km:.1f} km</div>
+        <div class="sub-value">{daily_required_km:.2f} km</div>
     </div>
     <div class="sub-card">
         <div class="sub-card-header">
@@ -355,7 +355,7 @@ sub_cards_html = f"""
             <span class="sub-icon">📈</span>
             <span class="sub-label">월 예상 거리</span>
         </div>
-        <div class="sub-value">{expected_total_km:.1f} km</div>
+        <div class="sub-value">{expected_total_km:.2f} km</div>
     </div>
 </div>
 """
@@ -415,7 +415,7 @@ st.plotly_chart(fig_curr, use_container_width=True, key="chart_current_month", c
 
 
 # ==========================================
-# 5. 월별 현황 섹션 (간격 좁힘 반영 완료)
+# 5. 월별 현황 섹션 (소수점 둘째 자리 반영)
 # ==========================================
 st.markdown("<hr style='margin: 25px 0 15px 0; border: none; border-top: 1px solid #E2E8F0;'>", unsafe_allow_html=True)
 
@@ -464,7 +464,6 @@ monthly_summary_12m["Color"] = monthly_summary_12m["Total_Distance"].apply(
     lambda x: "#1E3A8A" if x >= GOAL_KM else "#94A3B8"
 )
 
-# 제목과 그래프 간격을 좁히기 위해 margin-bottom을 4px로 설정
 st.markdown("<p style='font-size:1.1rem; font-weight:900; color:#0F172A; margin-bottom:4px;'>📈 최근 12개월 운동 현황</p>", unsafe_allow_html=True)
 
 fig_all_months = px.bar(
@@ -488,7 +487,7 @@ fig_all_months.add_hline(
 
 annotations_list = []
 for idx, row in monthly_summary_12m.iterrows():
-    val_str = f"{row['Total_Distance']:.1f}"
+    val_str = f"{row['Total_Distance']:.2f}"  # 차트 상단 숫자를 소수점 둘째 자리로 변경
     annotations_list.append(dict(
         x=row["Month_Label"],
         y=row["Total_Distance"],
@@ -502,7 +501,7 @@ for idx, row in monthly_summary_12m.iterrows():
 
 fig_all_months.update_layout(
     annotations=annotations_list,
-    margin=dict(l=10, r=10, t=10, b=0),  # 상단 여백(t)을 10으로 축소
+    margin=dict(l=10, r=10, t=10, b=0),
     height=220,
     xaxis_title=None,
     yaxis_title=None,
@@ -524,9 +523,9 @@ st.plotly_chart(fig_all_months, use_container_width=True, key="chart_all_months"
 st.write("")
 st.markdown("<p style='font-size:1.1rem; font-weight:900; color:#0F172A; margin-bottom:10px;'>📋 월별 현황 요약</p>", unsafe_allow_html=True)
 
-# 월별 현황 요약 테이블 데이터 가공
+# 월별 현황 요약 테이블 데이터 가공 (소수점 둘째 자리 반영)
 display_df = monthly_summary_12m.sort_values("Month", ascending=False).copy()
-display_df["총 거리 (km)"] = display_df["Total_Distance"].apply(lambda x: f"{x:.1f}")
+display_df["총 거리 (km)"] = display_df["Total_Distance"].apply(lambda x: f"{x:.2f}")
 display_df["러닝 횟수"] = display_df["Run_Count"].astype(str) + "회"
 display_df["목표 달성률"] = (display_df["Total_Distance"] / GOAL_KM * 100).round(1).astype(str) + "%"
 
