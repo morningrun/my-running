@@ -485,10 +485,9 @@ fig_all_months.add_hline(
     line_width=1.5
 )
 
-# [수정] 소수점 한 자리로 변경하여 글자 길이 단축 (`:.1f`)
 annotations_list = []
 for idx, row in monthly_summary_12m.iterrows():
-    val_str = f"{row['Total_Distance']:.1f}" # 소수점 두 자리에서 한 자리로 축소
+    val_str = f"{row['Total_Distance']:.1f}"
     annotations_list.append(dict(
         x=row["Month_Label"],
         y=row["Total_Distance"],
@@ -497,7 +496,7 @@ for idx, row in monthly_summary_12m.iterrows():
         xanchor="center",
         yanchor="bottom",
         yshift=2,
-        font=dict(size=9, color="#0F172A", family="Pretendard") # 폰트 크기는 보기 좋게 9로 유지
+        font=dict(size=9, color="#0F172A", family="Pretendard")
     ))
 
 fig_all_months.update_layout(
@@ -509,7 +508,8 @@ fig_all_months.update_layout(
     showlegend=False,
     plot_bgcolor="rgba(0,0,0,0)",
     paper_bgcolor="rgba(0,0,0,0)",
-    xaxis=dict(fixedrange=True, showgrid=False, tickfont=dict(size=10, color="#64748B")),
+    # [수정] X축 월 표시 글씨 크기를 8로 줄여서 가로로 넓어지는 현상 방지
+    xaxis=dict(fixedrange=True, showgrid=False, tickfont=dict(size=8, color="#64748B")),
     yaxis=dict(
         fixedrange=True, 
         showgrid=True, 
@@ -524,7 +524,7 @@ st.plotly_chart(fig_all_months, use_container_width=True, key="chart_all_months"
 st.write("")
 st.markdown("<p style='font-size:1.1rem; font-weight:900; color:#0F172A; margin-bottom:10px;'>📋 월별 현황 요약</p>", unsafe_allow_html=True)
 
-# 월별 현황 요약 테이블 데이터 가공 (테이블도 소수점 한 자리로 통일감 부여)
+# 월별 현황 요약 테이블 데이터 가공
 display_df = monthly_summary_12m.sort_values("Month", ascending=False).copy()
 display_df["총 거리 (km)"] = display_df["Total_Distance"].apply(lambda x: f"{x:.1f}")
 display_df["러닝 횟수"] = display_df["Run_Count"].astype(str) + "회"
