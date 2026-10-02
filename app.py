@@ -466,7 +466,6 @@ monthly_summary_12m["Color"] = monthly_summary_12m["Total_Distance"].apply(
 
 st.markdown("<p style='font-size:1.1rem; font-weight:900; color:#0F172A; margin-bottom:12px;'>📈 최근 12개월 운동 현황</p>", unsafe_allow_html=True)
 
-# 바 차트 생성 (기본 외부 텍스트 대신 annotations 방식을 쓰기 위해 text 속성 제거)
 fig_all_months = px.bar(
     monthly_summary_12m,
     x="Month_Label",
@@ -486,7 +485,7 @@ fig_all_months.add_hline(
     line_width=1.5
 )
 
-# [핵심 수정] X축 폰트 크기(size=10)와 완벽히 동일한 어노테이션(텍스트)을 각 막대 상단에 강제 수동 배치
+# [수정] 텍스트 크기를 살짝 컴팩트하게 조정(size=9)하고 겹침을 방지하기 위한 여백 및 위치 최적화
 annotations_list = []
 for idx, row in monthly_summary_12m.iterrows():
     val_str = f"{row['Total_Distance']:.2f}"
@@ -497,20 +496,20 @@ for idx, row in monthly_summary_12m.iterrows():
         showarrow=False,
         xanchor="center",
         yanchor="bottom",
-        yshift=4,  # 막대 바로 위에 위치하도록 미세 조정
-        font=dict(size=10, color="#0F172A", family="Pretendard") # X축 글씨 크기와 정확히 일치 (size=10)
+        yshift=2,  # 간격을 바짝 붙여서 다른 막대 글씨와 겹칠 확률 줄임
+        font=dict(size=9, color="#0F172A", family="Pretendard") # 폰트 크기를 9로 조정하여 겹침 방지
     ))
 
 fig_all_months.update_layout(
     annotations=annotations_list,
-    margin=dict(l=10, r=10, t=35, b=0),
+    margin=dict(l=10, r=10, t=40, b=0), # 상단 여백을 넓혀서 글씨가 잘리지 않게 방지
     height=220,
     xaxis_title=None,
     yaxis_title=None,
     showlegend=False,
     plot_bgcolor="rgba(0,0,0,0)",
     paper_bgcolor="rgba(0,0,0,0)",
-    xaxis=dict(fixedrange=True, showgrid=False, tickfont=dict(size=10, color="#64748B")), # X축 폰트 size=10 고정
+    xaxis=dict(fixedrange=True, showgrid=False, tickfont=dict(size=10, color="#64748B")), # X축 글씨는 기존 크기(10) 유지
     yaxis=dict(
         fixedrange=True, 
         showgrid=True, 
