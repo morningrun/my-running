@@ -473,6 +473,7 @@ fig_all_months = px.bar(
     text=monthly_summary_12m["Total_Distance"].apply(lambda v: f"{v:.2f}")
 )
 
+# 텍스트 크기(size)를 10으로 수정하여 X축 텍스트 크기와 일치시킴
 fig_all_months.update_traces(
     texttemplate="%{text}",
     marker_color=monthly_summary_12m["Color"],
@@ -512,7 +513,7 @@ st.plotly_chart(fig_all_months, use_container_width=True, key="chart_all_months"
 st.write("")
 st.markdown("<p style='font-size:1.1rem; font-weight:900; color:#0F172A; margin-bottom:10px;'>📋 월별 현황 요약</p>", unsafe_allow_html=True)
 
-# 월별 현황 요약 테이블 데이터 가공 (러닝 횟수를 정수형태로 표현)
+# 월별 현황 요약 테이블 데이터 가공
 display_df = monthly_summary_12m.sort_values("Month", ascending=False).copy()
 display_df["총 거리 (km)"] = display_df["Total_Distance"].apply(lambda x: f"{x:.2f}")
 display_df["러닝 횟수"] = display_df["Run_Count"].astype(str) + "회"
