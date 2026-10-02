@@ -473,14 +473,14 @@ fig_all_months = px.bar(
     text=monthly_summary_12m["Total_Distance"].apply(lambda v: f"{v:.2f}")
 )
 
-# 텍스트 크기(size)를 10으로 수정하여 X축 텍스트 크기와 일치시킴
+# [수정 포인트] 모바일 가독성 및 폰트 크기 비율 동기화를 위한 설정 보정 (autosize 비활성화 및 상단 여백 최적화)
 fig_all_months.update_traces(
     texttemplate="%{text}",
     marker_color=monthly_summary_12m["Color"],
     textposition="outside",
     cliponaxis=False,
     hoverinfo="none",
-    textfont=dict(size=10, color="#0F172A", family="Pretendard", weight="bold")
+    textfont=dict(size=9.5, color="#0F172A", family="Pretendard")
 )
 
 fig_all_months.add_hline(
@@ -491,22 +491,23 @@ fig_all_months.add_hline(
 )
 
 fig_all_months.update_layout(
-    margin=dict(l=10, r=10, t=35, b=0),
-    height=220,
+    autosize=True,
+    margin=dict(l=10, r=10, t=45, b=0),  # 상단 여백을 늘려 거리 텍스트가 잘리지 않게 조정
+    height=240,                           # 모바일에서 막대와 텍스트가 겹치지 않도록 높이 소폭 상향
     xaxis_title=None,
     yaxis_title=None,
     showlegend=False,
     plot_bgcolor="rgba(0,0,0,0)",
     paper_bgcolor="rgba(0,0,0,0)",
-    xaxis=dict(fixedrange=True, showgrid=False, tickfont=dict(size=10, color="#64748B")),
+    xaxis=dict(fixedrange=True, showgrid=False, tickfont=dict(size=9.5, color="#64748B")),
     yaxis=dict(
         fixedrange=True, 
         showgrid=True, 
         gridcolor="#E2E8F0", 
-        tickfont=dict(size=10, color="#64748B"), 
+        tickfont=dict(size=9.5, color="#64748B"), 
         rangemode="tozero"
     ),
-    font=dict(size=10, color="#475569")
+    font=dict(size=9.5, color="#475569")
 )
 st.plotly_chart(fig_all_months, use_container_width=True, key="chart_all_months", config={'displayModeBar': False, 'scrollZoom': False, 'staticPlot': True})
 
