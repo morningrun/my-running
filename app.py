@@ -256,10 +256,10 @@ current_weekday = week_days[now.weekday()]
 date_text = f"{year}.{month_num}.{current_day:02d} ({current_weekday})"
 calendar_icon_html = f"🗓️"
 
-# 상단 헤더 출력
+# 상단 헤더 출력 (중복 이름 삭제)
 header_html = f"""
     <div class="crew-header">
-        <div class="crew-title">이실권 200CREW ({selected_member})</div>
+        <div class="crew-title">이실권 200CREW</div>
         <div class="crew-subtitle"><span>{calendar_icon_html}</span> {date_text}</div>
     </div>
 """
@@ -508,7 +508,6 @@ fig_all_months.update_layout(
     showlegend=False,
     plot_bgcolor="rgba(0,0,0,0)",
     paper_bgcolor="rgba(0,0,0,0)",
-    # [수정] X축 월 표시 글씨 크기를 8로 줄여서 가로로 넓어지는 현상 방지
     xaxis=dict(fixedrange=True, showgrid=False, tickfont=dict(size=8, color="#64748B")),
     yaxis=dict(
         fixedrange=True, 
@@ -545,6 +544,41 @@ for _, row in display_df.iterrows():
     for val in row:
         table_html += f"<td>{val}</td>"
     table_html += "</tr>"
-table_html += "</tbody></table>"
+상단 타이틀에 표시되던 중복된 `({selected_member})` 부분을 깔끔하게 삭제했습니다! 
 
-st.markdown(table_html, unsafe_allow_html=True)
+수정이 반영된 전체 코드입니다:
+
+```python
+import base64
+import calendar
+from datetime import datetime
+import os
+from zoneinfo import ZoneInfo
+import plotly.express as px
+import pandas as pd
+import requests
+import streamlit as st
+
+# 이미지 base64 변환 함수 (마스코트 공용)
+def get_image_base64(path):
+    if os.path.exists(path):
+        with open(path, "rb") as f:
+            data = f.read()
+        return base64.b64encode(data).decode()
+    return None
+
+# 마스코트 이미지 로드
+mascot_base64 = get_image_base64("mascot.png")
+
+# 1. 페이지 기본 설정
+st.set_page_config(
+    page_title="이실권 200CREW",
+    page_icon="🏃",
+    layout="centered",
+    initial_sidebar_state="collapsed"
+)
+
+# 2. 화면 스타일 CSS
+st.markdown("""
+    <style>
+    @
