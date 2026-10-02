@@ -205,15 +205,12 @@ st.markdown("""
 # 3. 크루원 명단 설정 (관리자 마스터 API Key 활용)
 MASTER_API_KEY = st.secrets["INTERVALS_API_KEY"]
 
-# 여기에 크루원들의 이름을 추가하고, 코치 공유된 각자의 Athlete ID를 입력해 두세요.
 CREW_MEMBERS = {
     "이실권": st.secrets["INTERVALS_ATHLETE_ID"],
-    # 예시: "김철수": "i99999",
-    # 예시: "박영희": "i88888",
 }
 
-# 상단 로그인/선택 화면 (사이드바 또는 상단 셀렉트박스)
-st.sidebar.markdown("## 🏃‍♂️️ 200CREW 멤버 선택")
+# 상단 로그인/선택 화면 (사이드바)
+st.sidebar.markdown("## 🏃‍♂ 200CREW 멤버 선택")
 selected_member = st.sidebar.selectbox("크루원을 선택하세요", list(CREW_MEMBERS.keys()))
 ATHLETE_ID = CREW_MEMBERS[selected_member]
 API_KEY = MASTER_API_KEY
@@ -259,7 +256,7 @@ current_weekday = week_days[now.weekday()]
 date_text = f"{year}.{month_num}.{current_day:02d} ({current_weekday})"
 calendar_icon_html = f"🗓️"
 
-# 상단 헤더 출력 (누가 조회 중인지 이름도 함께 표시)
+# 상단 헤더 출력
 header_html = f"""
     <div class="crew-header">
         <div class="crew-title">이실권 200CREW ({selected_member})</div>
@@ -268,7 +265,7 @@ header_html = f"""
 """
 st.markdown(header_html, unsafe_allow_html=True)
 
-# 이번 달(현재) 데이터 필터링
+# 이번 달 데이터 필터링
 current_month_str = now.strftime("%Y-%m")
 df_current = df_all[(df_all["Month"] == current_month_str)] if not df_all.empty else pd.DataFrame()
 
@@ -291,7 +288,6 @@ else:
     daily_required_km = round(GOAL_KM / days_in_month, 2)
     expected_total_km = 0.0
 
-# 마스코트 이미지 출력 세팅
 if mascot_base64:
     mascot_html = f'<img src="data:image/png;base64,{mascot_base64}" style="width: 56px; height: 56px; border-radius: 50%; border: 2px solid #38BDF8; object-fit: contain; background-color: #FFFFFF; padding: 3px; display: block; margin-left: auto;">'
 else:
@@ -423,7 +419,6 @@ st.plotly_chart(fig_curr, use_container_width=True, key="chart_current_month", c
 # ==========================================
 st.markdown("<hr style='margin: 25px 0 15px 0; border: none; border-top: 1px solid #E2E8F0;'>", unsafe_allow_html=True)
 
-# 최근 12개월의 'YYYY-MM' 형식 리스트를 무조건 강제로 생성
 def get_past_12_months():
     months = []
     curr_y = now.year
@@ -445,21 +440,17 @@ if not df_all.empty:
         Total_Distance=("Distance", "sum"),
         Run_Count=("Distance", "count")
     )
-    # 12개월 전체 틀과 병합하여 기록 없는 달은 0으로 채움
     monthly_summary_12m = pd.merge(full_12m_df, monthly_summary_full, on="Month", how="left").fillna({
         "Total_Distance": 0.0,
         "Run_Count": 0
     })
-    
-    # 전체 월별 요약 테이블용 데이터도 준비
-    monthly_summary_full = monthly_summary_full.sort_values("Month", ascending=False)
 else:
     monthly_summary_12m = full_12m_df.copy()
     monthly_summary_12m["Total_Distance"] = 0.0
     monthly_summary_12m["Run_Count"] = 0
-    monthly_summary_full = monthly_summary_12m.sort_values("Month", ascending=False)
 
-# 월 라벨 포맷팅 함수 (예: 26-3월)
+monthly_summary_12m["Run_Count"] = monthly_summary_12m["Run_Count"].astype(int)
+
 def format_month_label(m_str):
     parts = m_str.split("-")
     if len(parts) == 2:
@@ -469,8 +460,6 @@ def format_month_label(m_str):
     return m_str
 
 monthly_summary_12m["Month_Label"] = monthly_summary_12m["Month"].apply(format_month_label)
-monthly_summary_full["Month_Label"] = monthly_summary_full["Month"].apply(format_month_label)
-
 monthly_summary_12m["Color"] = monthly_summary_12m["Total_Distance"].apply(
     lambda x: "#1E3A8A" if x >= GOAL_KM else "#94A3B8"
 )
@@ -502,7 +491,7 @@ fig_all_months.add_hline(
 
 fig_all_months.update_layout(
     margin=dict(l=10, r=10, t=35, b=0),
-    height=220,  # 높이 220 유지
+    height=220,
     xaxis_title=None,
     yaxis_title=None,
     showlegend=False,
@@ -523,14 +512,14 @@ st.plotly_chart(fig_all_months, use_container_width=True, key="chart_all_months"
 st.write("")
 st.markdown("<p style='font-size:1.1rem; font-weight:900; color:#0F172A; margin-bottom:10px;'>📋 월별 현황 요약</p>", unsafe_allow_html=True)
 
-# 전체 월별 요약 테이블 데이터 가공 (0인 달도 포함하여 최신순 정렬)
+# 월별 현황 요약 테이블 데이터 가공 (러닝 횟수를 정수형태로 표현)
 display_df = monthly_summary_12m.sort_values("Month", ascending=False).copy()
 display_df["총 거리 (km)"] = display_df["Total_Distance"].apply(lambda x: f"{x:.2f}")
+display_df["러닝 횟수"] = display_df["Run_Count"].astype(str) + "회"
 display_df["목표 달성률"] = (display_df["Total_Distance"] / GOAL_KM * 100).round(1).astype(str) + "%"
 
 display_df = display_df.rename(columns={
-    "Month_Label": "조회 월",
-    "Run_Count": "러닝 횟수"
+    "Month_Label": "조회 월"
 })[["조회 월", "총 거리 (km)", "러닝 횟수", "목표 달성률"]].reset_index(drop=True)
 
 table_html = "<table class='custom-table'>"
