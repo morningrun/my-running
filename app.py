@@ -256,7 +256,7 @@ current_weekday = week_days[now.weekday()]
 date_text = f"{year}.{month_num}.{current_day:02d} ({current_weekday})"
 calendar_icon_html = f"🗓️"
 
-# 상단 헤더 출력 (중복 이름 삭제)
+# 상단 헤더 출력 (이름 중복 삭제 적용 완료)
 header_html = f"""
     <div class="crew-header">
         <div class="crew-title">이실권 200CREW</div>
@@ -544,41 +544,6 @@ for _, row in display_df.iterrows():
     for val in row:
         table_html += f"<td>{val}</td>"
     table_html += "</tr>"
-상단 타이틀에 표시되던 중복된 `({selected_member})` 부분을 깔끔하게 삭제했습니다! 
+table_html += "</tbody></table>"
 
-수정이 반영된 전체 코드입니다:
-
-```python
-import base64
-import calendar
-from datetime import datetime
-import os
-from zoneinfo import ZoneInfo
-import plotly.express as px
-import pandas as pd
-import requests
-import streamlit as st
-
-# 이미지 base64 변환 함수 (마스코트 공용)
-def get_image_base64(path):
-    if os.path.exists(path):
-        with open(path, "rb") as f:
-            data = f.read()
-        return base64.b64encode(data).decode()
-    return None
-
-# 마스코트 이미지 로드
-mascot_base64 = get_image_base64("mascot.png")
-
-# 1. 페이지 기본 설정
-st.set_page_config(
-    page_title="이실권 200CREW",
-    page_icon="🏃",
-    layout="centered",
-    initial_sidebar_state="collapsed"
-)
-
-# 2. 화면 스타일 CSS
-st.markdown("""
-    <style>
-    @
+st.markdown(table_html, unsafe_allow_html=True)
