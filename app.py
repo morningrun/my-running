@@ -485,7 +485,7 @@ fig_all_months.add_hline(
     line_width=1.5
 )
 
-# [수정] 텍스트 크기를 살짝 컴팩트하게 조정(size=9)하고 겹침을 방지하기 위한 여백 및 위치 최적화
+# [수정] 폰트 크기를 8로 더 줄이고, y축 상단 공간을 확보하여 겹침 현상 원천 차단
 annotations_list = []
 for idx, row in monthly_summary_12m.iterrows():
     val_str = f"{row['Total_Distance']:.2f}"
@@ -496,20 +496,20 @@ for idx, row in monthly_summary_12m.iterrows():
         showarrow=False,
         xanchor="center",
         yanchor="bottom",
-        yshift=2,  # 간격을 바짝 붙여서 다른 막대 글씨와 겹칠 확률 줄임
-        font=dict(size=9, color="#0F172A", family="Pretendard") # 폰트 크기를 9로 조정하여 겹침 방지
+        yshift=2,
+        font=dict(size=8, color="#0F172A", family="Pretendard") # 폰트 크기를 8로 축소
     ))
 
 fig_all_months.update_layout(
     annotations=annotations_list,
-    margin=dict(l=10, r=10, t=40, b=0), # 상단 여백을 넓혀서 글씨가 잘리지 않게 방지
+    margin=dict(l=10, r=10, t=50, b=0), # 상단 여백을 50으로 넉넉하게 늘려 글씨나 점선이 잘리지 않게 조정
     height=220,
     xaxis_title=None,
     yaxis_title=None,
     showlegend=False,
     plot_bgcolor="rgba(0,0,0,0)",
     paper_bgcolor="rgba(0,0,0,0)",
-    xaxis=dict(fixedrange=True, showgrid=False, tickfont=dict(size=10, color="#64748B")), # X축 글씨는 기존 크기(10) 유지
+    xaxis=dict(fixedrange=True, showgrid=False, tickfont=dict(size=10, color="#64748B")),
     yaxis=dict(
         fixedrange=True, 
         showgrid=True, 
