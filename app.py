@@ -255,8 +255,4 @@ current_day = now.day
 today_date_str = now.strftime("%Y-%m-%d")
 week_days = ['월', '화', '수', '목', '금', '토', '일']
 current_weekday = week_days[now.weekday()]
-date_text = f"{year}.{month_num}.{current_day:02d} ({current_weekday})"
-calendar_icon_html = f"🗓️"
-
-# 상단 헤더 출력
-header_
+date
