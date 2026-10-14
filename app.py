@@ -204,10 +204,15 @@ header {visibility: hidden;}
 st.markdown(css_styles, unsafe_allow_html=True)
 
 # 3. 크루원 명단 설정 (관리자 마스터 API Key 활용)
-MASTER_API_KEY = st.secrets["INTERVALS_API_KEY"]
+try:
+    MASTER_API_KEY = st.secrets["INTERVALS_API_KEY"]
+    ATHLETE_ID_SECRET = st.secrets["INTERVALS_ATHLETE_ID"]
+except Exception:
+    MASTER_API_KEY = ""
+    ATHLETE_ID_SECRET = ""
 
 CREW_MEMBERS = {
-    "이실권": st.secrets["INTERVALS_ATHLETE_ID"],
+    "이실권": ATHLETE_ID_SECRET,
 }
 
 # 상단 로그인/선택 화면 (사이드바)
@@ -223,10 +228,15 @@ now = datetime.now(KST)
 # 4. 데이터 로딩
 @st.cache_data(ttl=300)
 def fetch_running_data(athlete_id, api_key, start_date_str):
+    if not athlete_id or not api_key:
+        return []
     url = f"https://intervals.icu/api/v1/athlete/{athlete_id}/activities?oldest={start_date_str}"
-    response = requests.get(url, auth=("API_KEY", api_key))
-    if response.status_code == 200:
-        return response.json()
+    try:
+        response = requests.get(url, auth=("API_KEY", api_key))
+        if response.status_code == 200:
+            return response.json()
+    except Exception:
+        pass
     return []
 
 past_year_start = f"{now.year - 2}-01-01"
@@ -234,15 +244,16 @@ activities = fetch_running_data(ATHLETE_ID, API_KEY, past_year_start)
 
 # 5. 데이터 전처리
 running_records = []
-if activities:
+if activities and isinstance(activities, list):
     for act in activities:
-        if act.get("type") == "Run":
+        if isinstance(act, dict) and act.get("type") == "Run":
             distance_km = round(act.get("distance", 0) / 1000, 2)
             start_date_local = act.get("start_date_local", "")[:10]
-            running_records.append({
-                "Date": start_date_local,
-                "Distance": distance_km
-            })
+            if start_date_local:
+                running_records.append({
+                    "Date": start_date_local,
+                    "Distance": distance_km
+                })
 
 df_all = pd.DataFrame(running_records)
 if not df_all.empty:
@@ -266,3 +277,27 @@ header_html = f"""
     </div>
 """
 st.markdown(header_html, unsafe_allow_html=True)
+
+# 이번 달 데이터 필터링
+current_month_str = now.strftime("%Y-%m")
+df_current = df_all[(df_all["Month"] == current_month_str)] if not df_all.empty else pd.DataFrame()
+
+days_in_month = calendar.monthrange(now.year, now.month)[1]
+remaining_days = max(1, days_in_month - current_day + 1)
+GOAL_KM = 200.0
+
+if not df_current.empty:
+    total_km = round(df_current["Distance"].sum(), 2)
+    run_count = len(df_current)
+    remaining_km = max(0.0, round(GOAL_KM - total_km, 2))
+    
+    # 오늘 운동 거리 계산
+    df_today = df_current[df_current["Date"] == today_date_str]
+    today_km = round(df_today["Distance"].sum(), 2) if not df_today.empty else 0.0
+    
+    progress = total_km / GOAL_KM
+    percent = round(progress * 100, 1)
+    
+    expected_total_km = round((total_km / current_day) * days_in_month, 2)
+else:
+    total_km, run_count, remaining_km, today_km, progress, percent = 0.0, 0, GOAL_KM
