@@ -255,4 +255,14 @@ current_day = now.day
 today_date_str = now.strftime("%Y-%m-%d")
 week_days = ['월', '화', '수', '목', '금', '토', '일']
 current_weekday = week_days[now.weekday()]
-date
+date_text = f"{year}.{month_num}.{current_day:02d} ({current_weekday})"
+calendar_icon_html = "🗓️"
+
+# 상단 헤더 출력
+header_html = f"""
+    <div class="crew-header">
+        <div class="crew-title">이실권 200CREW</div>
+        <div class="crew-subtitle"><span>{calendar_icon_html}</span> {date_text}</div>
+    </div>
+"""
+st.markdown(header_html, unsafe_allow_html=True)
