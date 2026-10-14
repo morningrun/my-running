@@ -279,4 +279,19 @@ GOAL_KM = 200.0
 if not df_current.empty:
     total_km = round(df_current["Distance"].sum(), 2)
     run_count = len(df_current)
-    remaining_km = max(0.0, round(
+    remaining_km = max(0.0, round(GOAL_KM - total_km, 2))
+    
+    # 오늘 운동 거리 계산
+    df_today = df_current[df_current["Date"] == today_date_str]
+    today_km = round(df_today["Distance"].sum(), 2) if not df_today.empty else 0.0
+    
+    progress = total_km / GOAL_KM
+    percent = round(progress * 100, 1)
+    
+    expected_total_km = round((total_km / current_day) * days_in_month, 2)
+else:
+    total_km, run_count, remaining_km, today_km, progress, percent = 0.0, 0, GOAL_KM, 0.0, 0.0, 0.0
+    expected_total_km = 0.0
+
+if mascot_base64:
+    mascot_html = f'<img src="data:image/png;base64,{mascot_base64}" style="width: 56px; height: 56px; border-radius: 50%; border: 2px solid #38BDF8; object-fit: contain; background-color: #FFFFFF; padding: 3px; display: block; margin-left
