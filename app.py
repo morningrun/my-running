@@ -203,23 +203,23 @@ header {visibility: hidden;}
 """
 st.markdown(css_styles, unsafe_allow_html=True)
 
-# 3. 크루원 명단 설정 (관리자 마스터 API Key 활용)
-try:
-    MASTER_API_KEY = st.secrets["INTERVALS_API_KEY"]
-    ATHLETE_ID_SECRET = st.secrets["INTERVALS_ATHLETE_ID"]
-except Exception:
-    MASTER_API_KEY = ""
-    ATHLETE_ID_SECRET = ""
+# 3. Secrets 보안 설정 확인
+master_api_key = st.secrets.get("INTERVALS_API_KEY", "")
+athlete_id_val = st.secrets.get("INTERVALS_ATHLETE_ID", "")
 
 CREW_MEMBERS = {
-    "이실권": ATHLETE_ID_SECRET,
+    "이실권": athlete_id_val,
 }
 
 # 상단 로그인/선택 화면 (사이드바)
 st.sidebar.markdown("## 🏃‍♂️ 200CREW 멤버 선택")
 selected_member = st.sidebar.selectbox("크루원을 선택하세요", list(CREW_MEMBERS.keys()))
 ATHLETE_ID = CREW_MEMBERS[selected_member]
-API_KEY = MASTER_API_KEY
+API_KEY = master_api_key
+
+if st.sidebar.button("🔄 데이터 새로고침"):
+    st.cache_data.clear()
+    st.rerun()
 
 # 한국 시간(KST) 기준 현재 시간 설정
 KST = ZoneInfo("Asia/Seoul")
@@ -232,72 +232,4 @@ def fetch_running_data(athlete_id, api_key, start_date_str):
         return []
     url = f"https://intervals.icu/api/v1/athlete/{athlete_id}/activities?oldest={start_date_str}"
     try:
-        response = requests.get(url, auth=("API_KEY", api_key))
-        if response.status_code == 200:
-            return response.json()
-    except Exception:
-        pass
-    return []
-
-past_year_start = f"{now.year - 2}-01-01"
-activities = fetch_running_data(ATHLETE_ID, API_KEY, past_year_start)
-
-# 5. 데이터 전처리
-running_records = []
-if activities and isinstance(activities, list):
-    for act in activities:
-        if isinstance(act, dict) and act.get("type") == "Run":
-            distance_km = round(act.get("distance", 0) / 1000, 2)
-            start_date_local = act.get("start_date_local", "")[:10]
-            if start_date_local:
-                running_records.append({
-                    "Date": start_date_local,
-                    "Distance": distance_km
-                })
-
-df_all = pd.DataFrame(running_records)
-if not df_all.empty:
-    df_all["Month"] = df_all["Date"].str[:7]
-
-# 날짜 및 요일 연동 계산
-year = now.strftime("%Y")
-month_num = now.strftime("%m")
-current_day = now.day
-today_date_str = now.strftime("%Y-%m-%d")
-week_days = ['월', '화', '수', '목', '금', '토', '일']
-current_weekday = week_days[now.weekday()]
-date_text = f"{year}.{month_num}.{current_day:02d} ({current_weekday})"
-calendar_icon_html = "🗓️"
-
-# 상단 헤더 출력
-header_html = f"""
-    <div class="crew-header">
-        <div class="crew-title">이실권 200CREW</div>
-        <div class="crew-subtitle"><span>{calendar_icon_html}</span> {date_text}</div>
-    </div>
-"""
-st.markdown(header_html, unsafe_allow_html=True)
-
-# 이번 달 데이터 필터링
-current_month_str = now.strftime("%Y-%m")
-df_current = df_all[(df_all["Month"] == current_month_str)] if not df_all.empty else pd.DataFrame()
-
-days_in_month = calendar.monthrange(now.year, now.month)[1]
-remaining_days = max(1, days_in_month - current_day + 1)
-GOAL_KM = 200.0
-
-if not df_current.empty:
-    total_km = round(df_current["Distance"].sum(), 2)
-    run_count = len(df_current)
-    remaining_km = max(0.0, round(GOAL_KM - total_km, 2))
-    
-    # 오늘 운동 거리 계산
-    df_today = df_current[df_current["Date"] == today_date_str]
-    today_km = round(df_today["Distance"].sum(), 2) if not df_today.empty else 0.0
-    
-    progress = total_km / GOAL_KM
-    percent = round(progress * 100, 1)
-    
-    expected_total_km = round((total_km / current_day) * days_in_month, 2)
-else:
-    total_km, run_count, remaining_km, today_km, progress, percent = 0.0, 0, GOAL_KM
+        response = requests.get(url, auth=("API_KEY", api_key), timeout=10)
