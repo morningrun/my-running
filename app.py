@@ -251,6 +251,7 @@ if not df_all.empty:
 year = now.strftime("%Y")
 month_num = now.strftime("%m")
 current_day = now.day
+today_date_str = now.strftime("%Y-%m-%d")
 week_days = ['월', '화', '수', '목', '금', '토', '일']
 current_weekday = week_days[now.weekday()]
 date_text = f"{year}.{month_num}.{current_day:02d} ({current_weekday})"
@@ -278,14 +279,16 @@ if not df_current.empty:
     run_count = len(df_current)
     remaining_km = max(0.0, round(GOAL_KM - total_km, 2))
     
+    # 오늘 운동 거리 계산
+    df_today = df_current[df_current["Date"] == today_date_str]
+    today_km = round(df_today["Distance"].sum(), 2) if not df_today.empty else 0.0
+    
     progress = total_km / GOAL_KM
     percent = round(progress * 100, 1)
     
-    daily_required_km = round(remaining_km / remaining_days, 2) if remaining_km > 0 else 0.0
     expected_total_km = round((total_km / current_day) * days_in_month, 2)
 else:
-    total_km, run_count, remaining_km, progress, percent = 0.0, 0, GOAL_KM, 0.0, 0.0
-    daily_required_km = round(GOAL_KM / days_in_month, 2)
+    total_km, run_count, remaining_km, today_km, progress, percent = 0.0, 0, GOAL_KM, 0.0, 0.0, 0.0
     expected_total_km = 0.0
 
 if mascot_base64:
@@ -326,22 +329,22 @@ else:
     st.markdown(f"<p style='font-size:0.85rem; font-weight:800; color:#0F172A; margin-top:4px;'>🔥 이번 달 총 {run_count}회 달리셨어요!</p>", unsafe_allow_html=True)
 st.write("")
 
-# 3. 서브 카드 출력 (소수점 둘째 자리 유지)
+# 3. 서브 카드 출력 (오늘 운동 거리 / 남은 거리 / 남은 기간 / 월 예상 거리)
 sub_cards_html = f"""
 <div class="grid-container">
+    <div class="sub-card">
+        <div class="sub-card-header">
+            <span class="sub-icon">🏅</span>
+            <span class="sub-label">오늘 운동 거리</span>
+        </div>
+        <div class="sub-value sub-value-large sub-accent">{today_km:.2f} km</div>
+    </div>
     <div class="sub-card">
         <div class="sub-card-header">
             <span class="sub-icon">🎯</span>
             <span class="sub-label">남은 거리</span>
         </div>
-        <div class="sub-value sub-value-large sub-accent">{remaining_km:.2f} km</div>
-    </div>
-    <div class="sub-card">
-        <div class="sub-card-header">
-            <span class="sub-icon">⚡</span>
-            <span class="sub-label">예상 하루 운동 거리</span>
-        </div>
-        <div class="sub-value">{daily_required_km:.2f} km</div>
+        <div class="sub-value sub-value-large">{remaining_km:.2f} km</div>
     </div>
     <div class="sub-card">
         <div class="sub-card-header">
@@ -411,139 +414,4 @@ fig_curr.update_layout(
     ),
     font=dict(size=10, color="#475569")
 )
-st.plotly_chart(fig_curr, use_container_width=True, key="chart_current_month", config={'displayModeBar': False, 'scrollZoom': False, 'staticPlot': True})
-
-
-# ==========================================
-# 5. 월별 현황 섹션 (최근 12개월 차트만 소수점 한 자리 적용)
-# ==========================================
-st.markdown("<hr style='margin: 25px 0 15px 0; border: none; border-top: 1px solid #E2E8F0;'>", unsafe_allow_html=True)
-
-def get_past_12_months():
-    months = []
-    curr_y = now.year
-    curr_m = now.month
-    for _ in range(12):
-        months.append(f"{curr_y}-{curr_m:02d}")
-        curr_m -= 1
-        if curr_m == 0:
-            curr_m = 12
-            curr_y -= 1
-    months.reverse()
-    return months
-
-past_12_months_list = get_past_12_months()
-full_12m_df = pd.DataFrame({"Month": past_12_months_list})
-
-if not df_all.empty:
-    monthly_summary_full = df_all.groupby("Month", as_index=False).agg(
-        Total_Distance=("Distance", "sum"),
-        Run_Count=("Distance", "count")
-    )
-    monthly_summary_12m = pd.merge(full_12m_df, monthly_summary_full, on="Month", how="left").fillna({
-        "Total_Distance": 0.0,
-        "Run_Count": 0
-    })
-else:
-    monthly_summary_12m = full_12m_df.copy()
-    monthly_summary_12m["Total_Distance"] = 0.0
-    monthly_summary_12m["Run_Count"] = 0
-
-monthly_summary_12m["Run_Count"] = monthly_summary_12m["Run_Count"].astype(int)
-
-def format_month_label(m_str):
-    parts = m_str.split("-")
-    if len(parts) == 2:
-        yy = parts[0][2:]
-        mm = int(parts[1])
-        return f"{yy}-{mm}월"
-    return m_str
-
-monthly_summary_12m["Month_Label"] = monthly_summary_12m["Month"].apply(format_month_label)
-monthly_summary_12m["Color"] = monthly_summary_12m["Total_Distance"].apply(
-    lambda x: "#1E3A8A" if x >= GOAL_KM else "#94A3B8"
-)
-
-st.markdown("<p style='font-size:1.1rem; font-weight:900; color:#0F172A; margin-bottom:4px;'>📈 최근 12개월 운동 현황</p>", unsafe_allow_html=True)
-
-fig_all_months = px.bar(
-    monthly_summary_12m,
-    x="Month_Label",
-    y="Total_Distance"
-)
-
-fig_all_months.update_traces(
-    marker_color=monthly_summary_12m["Color"],
-    cliponaxis=False,
-    hoverinfo="none"
-)
-
-fig_all_months.add_hline(
-    y=GOAL_KM, 
-    line_dash="dot", 
-    line_color="#64748B", 
-    line_width=1.5
-)
-
-annotations_list = []
-for idx, row in monthly_summary_12m.iterrows():
-    val_str = f"{row['Total_Distance']:.1f}"  # 🔥 최근 12개월 차트 상단 숫자를 소수점 한 자리로 변경
-    annotations_list.append(dict(
-        x=row["Month_Label"],
-        y=row["Total_Distance"],
-        text=val_str,
-        showarrow=False,
-        xanchor="center",
-        yanchor="bottom",
-        yshift=2,
-        font=dict(size=9, color="#0F172A", family="Pretendard")
-    ))
-
-fig_all_months.update_layout(
-    annotations=annotations_list,
-    margin=dict(l=10, r=10, t=10, b=0),
-    height=220,
-    xaxis_title=None,
-    yaxis_title=None,
-    showlegend=False,
-    plot_bgcolor="rgba(0,0,0,0)",
-    paper_bgcolor="rgba(0,0,0,0)",
-    xaxis=dict(fixedrange=True, showgrid=False, tickfont=dict(size=8, color="#64748B")),
-    yaxis=dict(
-        fixedrange=True, 
-        showgrid=True, 
-        gridcolor="#E2E8F0", 
-        tickfont=dict(size=10, color="#64748B"), 
-        rangemode="tozero"
-    ),
-    font=dict(size=10, color="#475569")
-)
-st.plotly_chart(fig_all_months, use_container_width=True, key="chart_all_months", config={'displayModeBar': False, 'scrollZoom': False, 'staticPlot': True})
-
-st.write("")
-st.markdown("<p style='font-size:1.1rem; font-weight:900; color:#0F172A; margin-bottom:10px;'>📋 월별 현황 요약</p>", unsafe_allow_html=True)
-
-# 월별 현황 요약 테이블 데이터 가공 (여기는 소수점 둘째 자리 유지)
-display_df = monthly_summary_12m.sort_values("Month", ascending=False).copy()
-display_df["총 거리 (km)"] = display_df["Total_Distance"].apply(lambda x: f"{x:.2f}")
-display_df["러닝 횟수"] = display_df["Run_Count"].astype(str) + "회"
-display_df["목표 달성률"] = (display_df["Total_Distance"] / GOAL_KM * 100).round(1).astype(str) + "%"
-
-display_df = display_df.rename(columns={
-    "Month_Label": "조회 월"
-})[["조회 월", "총 거리 (km)", "러닝 횟수", "목표 달성률"]].reset_index(drop=True)
-
-table_html = "<table class='custom-table'>"
-table_html += "<thead><tr>"
-for col in display_df.columns:
-    table_html += f"<th>{col}</th>"
-table_html += "</tr></thead><tbody>"
-
-for _, row in display_df.iterrows():
-    table_html += "<tr>"
-    for val in row:
-        table_html += f"<td>{val}</td>"
-    table_html += "</tr>"
-table_html += "</tbody></table>"
-
-st.markdown(table_html, unsafe_allow_html=True)
+st.plotly_chart(fig_curr, use_container_width=True, key="chart_current_month", config={'displayModeBar': False, 'scrollZoom': False, 'static
