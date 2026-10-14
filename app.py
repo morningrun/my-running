@@ -251,6 +251,7 @@ if not df_all.empty:
 year = now.strftime("%Y")
 month_num = now.strftime("%m")
 current_day = now.day
+today_date_str = now.strftime("%Y-%m-%d")
 week_days = ['월', '화', '수', '목', '금', '토', '일']
 current_weekday = week_days[now.weekday()]
 date_text = f"{year}.{month_num}.{current_day:02d} ({current_weekday})"
@@ -278,14 +279,16 @@ if not df_current.empty:
     run_count = len(df_current)
     remaining_km = max(0.0, round(GOAL_KM - total_km, 2))
     
+    # 오늘 운동 거리 계산 추가
+    df_today = df_current[df_current["Date"] == today_date_str]
+    today_km = round(df_today["Distance"].sum(), 2) if not df_today.empty else 0.0
+    
     progress = total_km / GOAL_KM
     percent = round(progress * 100, 1)
     
-    daily_required_km = round(remaining_km / remaining_days, 2) if remaining_km > 0 else 0.0
     expected_total_km = round((total_km / current_day) * days_in_month, 2)
 else:
-    total_km, run_count, remaining_km, progress, percent = 0.0, 0, GOAL_KM, 0.0, 0.0
-    daily_required_km = round(GOAL_KM / days_in_month, 2)
+    total_km, run_count, remaining_km, today_km, progress, percent = 0.0, 0, GOAL_KM, 0.0, 0.0, 0.0
     expected_total_km = 0.0
 
 if mascot_base64:
@@ -326,22 +329,22 @@ else:
     st.markdown(f"<p style='font-size:0.85rem; font-weight:800; color:#0F172A; margin-top:4px;'>🔥 이번 달 총 {run_count}회 달리셨어요!</p>", unsafe_allow_html=True)
 st.write("")
 
-# 3. 서브 카드 출력 (소수점 둘째 자리 유지)
+# 3. 서브 카드 출력 (오늘 운동 거리와 남은 거리 위치 교체)
 sub_cards_html = f"""
 <div class="grid-container">
+    <div class="sub-card">
+        <div class="sub-card-header">
+            <span class="sub-icon">🏅</span>
+            <span class="sub-label">오늘 운동 거리</span>
+        </div>
+        <div class="sub-value sub-value-large sub-accent">{today_km:.2f} km</div>
+    </div>
     <div class="sub-card">
         <div class="sub-card-header">
             <span class="sub-icon">🎯</span>
             <span class="sub-label">남은 거리</span>
         </div>
-        <div class="sub-value sub-value-large sub-accent">{remaining_km:.2f} km</div>
-    </div>
-    <div class="sub-card">
-        <div class="sub-card-header">
-            <span class="sub-icon">⚡</span>
-            <span class="sub-label">예상 하루 운동 거리</span>
-        </div>
-        <div class="sub-value">{daily_required_km:.2f} km</div>
+        <div class="sub-value sub-value-large">{remaining_km:.2f} km</div>
     </div>
     <div class="sub-card">
         <div class="sub-card-header">
