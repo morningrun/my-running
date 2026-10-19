@@ -8,13 +8,13 @@ import pandas as pd
 import requests
 import streamlit as st
 
-def get_image_base64(path):
+def get_base64(path):
     if os.path.exists(path):
         with open(path, "rb") as f:
             return base64.b64encode(f.read()).decode()
     return None
 
-mascot_base64 = get_image_base64("mascot.png")
+mascot_b64 = get_base64("mascot.png")
 
 st.set_page_config(
     page_title="이실권 200CREW",
@@ -23,7 +23,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-css_styles = """
+st.markdown("""
 <style>
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
 
@@ -63,7 +63,6 @@ header { visibility: hidden; }
 .sub-accent { color: #0284C7; }
 .sub-accent-red { color: #E11D48; }
 
-/* 접고 펼치기 익스팬더 디자인 및 굵은 글씨 설정 */
 div[data-testid="stExpander"] { background-color: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 16px; margin-bottom: 14px; box-shadow: 0 4px 12px -2px rgba(148, 163, 184, 0.08); overflow: hidden; }
 div[data-testid="stExpander"] summary { font-weight: 900 !important; color: #0F172A !important; font-size: 1.05rem !important; font-family: 'Pretendard', sans-serif !important; }
 
@@ -72,8 +71,7 @@ div[data-testid="stExpander"] summary { font-weight: 900 !important; color: #0F1
 .custom-table td { text-align: center; padding: 7px 6px; color: #334155; border-bottom: 1px solid #F1F5F9; line-height: 1.3; }
 .custom-table tr:last-child td { border-bottom: none; }
 </style>
-"""
-st.markdown(css_styles, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
 MASTER_API_KEY = st.secrets["INTERVALS_API_KEY"]
 CREW_MEMBERS = {"이실권": st.secrets["INTERVALS_ATHLETE_ID"]}
@@ -81,52 +79,44 @@ CREW_MEMBERS = {"이실권": st.secrets["INTERVALS_ATHLETE_ID"]}
 st.sidebar.markdown("## 🏃‍♂️ 200CREW 멤버 선택")
 selected_member = st.sidebar.selectbox("크루원을 선택하세요", list(CREW_MEMBERS.keys()))
 ATHLETE_ID = CREW_MEMBERS[selected_member]
-API_KEY = MASTER_API_KEY
 
 KST = ZoneInfo("Asia/Seoul")
 now = datetime.now(KST)
 
 @st.cache_data(ttl=300)
-def fetch_running_data(athlete_id, api_key, start_date_str):
-    url = "https://intervals.icu/api/v1/athlete/" + str(athlete_id) + "/activities?oldest=" + start_date_str
-    response = requests.get(url, auth=("API_KEY", api_key))
-    if response.status_code == 200:
-        return response.json()
-    return []
+def fetch_data(athlete_id, api_key, start_date):
+    url = f"https://intervals.icu/api/v1/athlete/{athlete_id}/activities?oldest={start_date}"
+    res = requests.get(url, auth=("API_KEY", api_key))
+    return res.json() if res.status_code == 200 else []
 
-past_year_start = str(now.year - 2) + "-01-01"
-activities = fetch_running_data(ATHLETE_ID, API_KEY, past_year_start)
+activities = fetch_data(ATHLETE_ID, MASTER_API_KEY, f"{now.year - 2}-01-01")
 
-running_records = []
+records = []
 if activities:
     for act in activities:
         if act.get("type") == "Run":
-            distance_km = round(act.get("distance", 0) / 1000, 2)
-            start_date_local = act.get("start_date_local", "")[:10]
-            running_records.append({"Date": start_date_local, "Distance": distance_km})
+            dist = round(act.get("distance", 0) / 1000, 2)
+            date_str = act.get("start_date_local", "")[:10]
+            records.append({"Date": date_str, "Distance": dist})
 
-df_all = pd.DataFrame(running_records)
+df_all = pd.DataFrame(records)
 if not df_all.empty:
     df_all["Month"] = df_all["Date"].str[:7]
 
-year = now.strftime("%Y")
-month_num = now.strftime("%m")
 current_day = now.day
-today_date_str = now.strftime("%Y-%m-%d")
+today_str = now.strftime("%Y-%m-%d")
 week_days = ['월', '화', '수', '목', '금', '토', '일']
-current_weekday = week_days[now.weekday()]
-date_text = year + "." + month_num + "." + f"{current_day:02d}" + " (" + current_weekday + ")"
+date_text = f"{now.year}.{now.month:02d}.{current_day:02d} ({week_days[now.weekday()]})"
 
-header_html = (
-    '<div class="crew-header">'
-    '<div class="crew-title">이실권 200CREW</div>'
-    '<div class="crew-subtitle"><span>🗓️</span> ' + date_text + '</div>'
-    '</div>'
-)
-st.markdown(header_html, unsafe_allow_html=True)
+st.markdown(f"""
+<div class="crew-header">
+    <div class="crew-title">이실권 200CREW</div>
+    <div class="crew-subtitle"><span>🗓️</span> {date_text}</div>
+</div>
+""", unsafe_allow_html=True)
 
-current_month_str = now.strftime("%Y-%m")
-df_current = df_all[(df_all["Month"] == current_month_str)] if not df_all.empty else pd.DataFrame()
+curr_month_str = now.strftime("%Y-%m")
+df_current = df_all[df_all["Month"] == curr_month_str] if not df_all.empty else pd.DataFrame()
 
 days_in_month = calendar.monthrange(now.year, now.month)[1]
 remaining_days = max(1, days_in_month - current_day + 1)
@@ -136,7 +126,7 @@ if not df_current.empty:
     total_km = round(df_current["Distance"].sum(), 2)
     run_count = len(df_current)
     remaining_km = max(0.0, round(GOAL_KM - total_km, 2))
-    df_today = df_current[df_current["Date"] == today_date_str]
+    df_today = df_current[df_current["Date"] == today_str]
     today_km = round(df_today["Distance"].sum(), 2) if not df_today.empty else 0.0
     progress = total_km / GOAL_KM
     percent = round(progress * 100, 1)
@@ -145,75 +135,75 @@ else:
     total_km, run_count, remaining_km, today_km, progress, percent = 0.0, 0, GOAL_KM, 0.0, 0.0, 0.0
     expected_total_km = 0.0
 
-if mascot_base64:
-    mascot_html = '<img src="data:image/png;base64,' + mascot_base64 + '" style="width: 56px; height: 56px; border-radius: 50%; border: 2px solid #38BDF8; object-fit: contain; background-color: #FFFFFF; padding: 3px; display: block; margin-left: auto;">'
-else:
-    mascot_html = '<span style="font-size: 1.8rem; display: block; text-align: right;">🏃💨</span>'
+mascot_html = f'<img src="data:image/png;base64,{mascot_b64}" style="width: 56px; height: 56px; border-radius: 50%; border: 2px solid #38BDF8; object-fit: contain; background-color: #FFFFFF; padding: 3px; display: block; margin-left: auto;">' if mascot_b64 else '<span style="font-size: 1.8rem; display: block; text-align: right;">🏃💨</span>'
 
-dynamic_goal_title = "🎯 " + now.strftime('%y년 %m월') + " 목표"
-
-hero_html = (
-    '<div class="hero-card">'
-    '<div class="hero-top-row">'
-    '<div>'
-    '<span class="hero-goal-title">' + dynamic_goal_title + '</span>'
-    '<span class="hero-goal-target" style="margin-left: 8px;">' + str(int(GOAL_KM)) + ' km</span>'
-    '</div>'
-    '<div style="width: 56px;">' + mascot_html + '</div>'
-    '</div>'
-    '<div class="hero-bottom-row">'
-    '<div>'
-    '<span class="hero-km-highlight">' + f"{total_km:.2f}" + '</span>'
-    '<span class="hero-km-label">km 달성</span>'
-    '</div>'
-    '<div>'
-    '<span class="hero-percent-tag">' + str(percent) + '%</span>'
-    '</div>'
-    '</div>'
-    '</div>'
-)
-st.markdown(hero_html, unsafe_allow_html=True)
+st.markdown(f"""
+<div class="hero-card">
+    <div class="hero-top-row">
+        <div>
+            <span class="hero-goal-title">🎯 {now.strftime('%y년 %m월')} 목표</span>
+            <span class="hero-goal-target" style="margin-left: 8px;">{int(GOAL_KM)} km</span>
+        </div>
+        <div style="width: 56px;">{mascot_html}</div>
+    </div>
+    <div class="hero-bottom-row">
+        <div>
+            <span class="hero-km-highlight">{total_km:.2f}</span>
+            <span class="hero-km-label">km 달성</span>
+        </div>
+        <div>
+            <span class="hero-percent-tag">{percent}%</span>
+        </div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
 bar_width = min(100.0, percent)
-custom_progress_html = (
-    '<div class="progress-wrapper">'
-    '<div class="custom-progress-container">'
-    '<div class="custom-progress-bar" style="width: ' + str(bar_width) + '%;"></div>'
-    '<div class="custom-progress-badge" style="left: ' + str(bar_width) + '%;">' + str(percent) + '%</div>'
-    '</div>'
-    '</div>'
-)
-st.markdown(custom_progress_html, unsafe_allow_html=True)
+st.markdown(f"""
+<div class="progress-wrapper">
+    <div class="custom-progress-container">
+        <div class="custom-progress-bar" style="width: {bar_width}%;"></div>
+        <div class="custom-progress-badge" style="left: {bar_width}%;">{percent}%</div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
-if progress > 1.0:
-    msg = "🔥 목표 달성 완료! 현재 " + str(percent) + "% 달성 중 (총 " + str(run_count) + "회)"
-else:
-    msg = "🔥 이번 달 총 " + str(run_count) + "회 달리셨어요!"
-
-st.markdown("<p style='font-size:0.85rem; font-weight:800; color:#0F172A; margin-top:4px;'>" + msg + "</p>", unsafe_allow_html=True)
+msg = f"🔥 목표 달성 완료! 현재 {percent}% 달성 중 (총 {run_count}회)" if progress > 1.0 else f"🔥 이번 달 총 {run_count}회 달리셨어요!"
+st.markdown(f"<p style='font-size:0.85rem; font-weight:800; color:#0F172A; margin-top:4px;'>{msg}</p>", unsafe_allow_html=True)
 st.write("")
 
-sub_cards_html = (
-    '<div class="grid-container">'
-    '<div class="sub-card">'
-    '<div class="sub-card-header"><span class="sub-icon">🏅</span><span class="sub-label">오늘 운동 거리</span></div>'
-    '<div class="sub-value sub-value-large sub-accent">' + f"{today_km:.2f}" + ' km</div>'
-    '</div>'
-    '<div class="sub-card">'
-    '<div class="sub-card-header"><span class="sub-icon">🎯</span><span class="sub-label">남은 거리</span></div>'
-    '<div class="sub-value sub-value-large sub-accent-red">' + f"{remaining_km:.2f}" + ' km</div>'
-    '</div>'
-    '<div class="sub-card">'
-    '<div class="sub-card-header"><span class="sub-icon">⏳</span><span class="sub-label">남은 기간</span></div>'
-    '<div class="sub-value sub-value-large">' + str(remaining_days) + ' 일</div>'
-    '</div>'
-    '<div class="sub-card">'
-    '<div class="sub-card-header"><span class="sub-icon">📈</span><span class="sub-label">월 예상 거리</span></div>'
-    '<div class="sub-value sub-value-large">' + f"{expected_total_km:.2f}" + ' km</div>'
-    '</div>'
-    '</div>'
-)
-st.markdown(sub_cards_html, unsafe_allow_html=True)
+st.markdown(f"""
+<div class="grid-container">
+    <div class="sub-card">
+        <div class="sub-card-header"><span class="sub-icon">🏅</span><span class="sub-label">오늘 운동 거리</span></div>
+        <div class="sub-value sub-value-large sub-accent">{today_km:.2f} km</div>
+    </div>
+    <div class="sub-card">
+        <div class="sub-card-header"><span class="sub-icon">🎯</span><span class="sub-label">남은 거리</span></div>
+        <div class="sub-value sub-value-large sub-accent-red">{remaining_km:.2f} km</div>
+    </div>
+    <div class="sub-card">
+        <div class="sub-card-header"><span class="sub-icon">⏳</span><span class="sub-label">남은 기간</span></div>
+        <div class="sub-value sub-value-large">{remaining_days} 일</div>
+    </div>
+    <div class="sub-card">
+        <div class="sub-card-header"><span class="sub-icon">📈</span><span class="sub-label">월 예상 거리</span></div>
+        <div class="sub-value sub-value-large">{expected_total_km:.2f} km</div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
-# 1. 이번 달 운동 현황 (접고 펼치기 익스팬더 적용 & 굵은 글씨)
-with st.expander(str(now.month) + "월 운동 현황",
+with st.expander(f"{now.month}월 운동 현황", expanded=True):
+    _, last_day = calendar.monthrange(now.year, now.month)
+    full_dates = pd.DataFrame({"Date": [f"{now.year}-{now.month:02d}-{d:02d}" for d in range(1, last_day + 1)]})
+    
+    if not df_current.empty:
+        daily = df_current.groupby("Date", as_index=False)["Distance"].sum()
+        merged_curr = pd.merge(full_dates, daily, on="Date", how="left").fillna(0)
+    else:
+        merged_curr = full_dates
+        merged_curr["Distance"] = 0.0
+
+    merged_curr["Date_Label"] = [str(int(d.split("-")[2])) for d in merged_curr["Date"]]
+    fig_curr = px.bar(merged_curr, x="Date_Label", y="Distance")
+    fig_curr.update_
