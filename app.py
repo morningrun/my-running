@@ -32,11 +32,6 @@ header { visibility: hidden; }
 .crew-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; padding: 0 4px; }
 .crew-title { font-size: 1.45rem !important; font-weight: 900; background: linear-gradient(135deg, #0F172A 0%, #0284C7 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 0; }
 .crew-subtitle { font-size: 0.75rem; color: #64748B; font-weight: 600; background: #FFFFFF; border: 1px solid #E2E8F0; padding: 4px 10px; border-radius: 12px; display: flex; align-items: center; gap: 5px; }
-
-/* 링크 스타일 */
-.link-badge { text-decoration: none; color: inherit; display: block; transition: transform 0.1s ease; }
-.link-badge:hover { transform: translateY(-2px); }
-
 .hero-card { background: linear-gradient(145deg, #1E293B 0%, #0F172A 100%); border-radius: 22px; padding: 20px 22px; color: #FFFFFF; box-shadow: 0 12px 28px -6px rgba(15, 23, 42, 0.25); margin-bottom: 16px; }
 .hero-top-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 12px; margin-bottom: 14px; }
 .hero-goal-title { font-size: 0.95rem; color: #94A3B8; font-weight: 700; }
@@ -117,13 +112,10 @@ else:
 
 mascot_html = f'<img src="data:image/png;base64,{mascot_b64}" style="width: 56px; height: 56px; border-radius: 50%; border: 2px solid #38BDF8; object-fit: contain; background: #FFFFFF; padding: 3px; display: block; margin-left: auto;">' if mascot_b64 else '<span style="font-size: 1.8rem; display: block; text-align: right;">🏃💨</span>'
 
-# 이번 달 전체 거리 카드에 Intervals.icu 링크 적용
-intervals_url = f"https://intervals.icu/athletes/{ATHLETE_ID}"
 st.markdown(f'''
-<a href="{intervals_url}" target="_blank" class="link-badge">
 <div class="hero-card">
     <div class="hero-top-row">
-        <div><span class="hero-goal-title">🎯 {now.strftime('%y년 %m월')} 목표 (Intervals)</span><span class="hero-goal-target" style="margin-left: 8px;">{int(GOAL_KM)} km</span></div>
+        <div><span class="hero-goal-title">🎯 {now.strftime('%y년 %m월')} 목표</span><span class="hero-goal-target" style="margin-left: 8px;">{int(GOAL_KM)} km</span></div>
         <div style="width: 56px;">{mascot_html}</div>
     </div>
     <div class="hero-bottom-row">
@@ -131,7 +123,6 @@ st.markdown(f'''
         <div><span class="hero-percent-tag">{pct}%</span></div>
     </div>
 </div>
-</a>
 ''', unsafe_allow_html=True)
 
 bar_w = min(100.0, pct)
@@ -141,28 +132,12 @@ msg = f"🔥 목표 달성 완료! 현재 {pct}% 달성 중 (총 {run_cnt}회)" 
 st.markdown(f"<p style='font-size:0.85rem; font-weight:800; color:#0F172A; margin-top:4px;'>{msg}</p>", unsafe_allow_html=True)
 st.write("")
 
-# 오늘 운동 거리 카드에 Garmin Connect 링크 적용
-garmin_url = "https://connect.garmin.com/modern/"
 st.markdown(f'''
 <div class="grid-container">
-    <a href="{garmin_url}" target="_blank" class="link-badge" style="grid-column: span 1;">
-        <div class="sub-card" style="height: 100%;">
-            <div class="sub-card-header"><span class="sub-icon">🏅</span><span class="sub-label">오늘 운동 거리 (Garmin)</span></div>
-            <div class="sub-value sub-value-large sub-accent">{today_km:.2f} km</div>
-        </div>
-    </a>
-    <div class="sub-card">
-        <div class="sub-card-header"><span class="sub-icon">🎯</span><span class="sub-label">남은 거리</span></div>
-        <div class="sub-value sub-value-large sub-accent-red">{rem_km:.2f} km</div>
-    </div>
-    <div class="sub-card">
-        <div class="sub-card-header"><span class="sub-icon">⏳</span><span class="sub-label">남은 기간</span></div>
-        <div class="sub-value sub-value-large">{rem_days} 일</div>
-    </div>
-    <div class="sub-card">
-        <div class="sub-card-header"><span class="sub-icon">📈</span><span class="sub-label">월 예상 거리</span></div>
-        <div class="sub-value sub-value-large">{exp_km:.2f} km</div>
-    </div>
+    <div class="sub-card"><div class="sub-card-header"><span class="sub-icon">🏅</span><span class="sub-label">오늘 운동 거리</span></div><div class="sub-value sub-value-large sub-accent">{today_km:.2f} km</div></div>
+    <div class="sub-card"><div class="sub-card-header"><span class="sub-icon">🎯</span><span class="sub-label">남은 거리</span></div><div class="sub-value sub-value-large sub-accent-red">{rem_km:.2f} km</div></div>
+    <div class="sub-card"><div class="sub-card-header"><span class="sub-icon">⏳</span><span class="sub-label">남은 기간</span></div><div class="sub-value sub-value-large">{rem_days} 일</div></div>
+    <div class="sub-card"><div class="sub-card-header"><span class="sub-icon">📈</span><span class="sub-label">월 예상 거리</span></div><div class="sub-value sub-value-large">{exp_km:.2f} km</div></div>
 </div>
 ''', unsafe_allow_html=True)
 with st.expander(f"📊 {now.month}월 운동 현황", expanded=True):
