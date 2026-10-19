@@ -200,41 +200,38 @@ sub_cards_html = (
 )
 st.markdown(sub_cards_html, unsafe_allow_html=True)
 
-current_month_title_str = f"📊 {now.month}월 운동 현황"
-st.markdown(f"<p style='font-size:1.1rem; font-weight:900; color:#0F172A; margin-bottom:12px;'>{current_month_title_str}</p>", unsafe_allow_html=True)
+# 1. 이번 달 운동 현황 (접고 펼치기 적용: 기본적으로 열려있도록 expanded=True 설정)
+with st.expander(f"📊 {now.month}월 운동 현황", expanded=True):
+    _, last_day = calendar.monthrange(now.year, now.month)
+    all_dates_current = [f"{now.year}-{now.month:02d}-{day:02d}" for day in range(1, last_day + 1)]
+    full_dates_df_current = pd.DataFrame({"Date": all_dates_current})
 
-_, last_day = calendar.monthrange(now.year, now.month)
-all_dates_current = [f"{now.year}-{now.month:02d}-{day:02d}" for day in range(1, last_day + 1)]
-full_dates_df_current = pd.DataFrame({"Date": all_dates_current})
+    if not df_current.empty:
+        daily_df_current = df_current.groupby("Date", as_index=False)["Distance"].sum()
+        merged_current = pd.merge(full_dates_df_current, daily_df_current, on="Date", how="left").fillna(0)
+    else:
+        merged_current = full_dates_df_current
+        merged_current["Distance"] = 0.0
 
-if not df_current.empty:
-    daily_df_current = df_current.groupby("Date", as_index=False)["Distance"].sum()
-    merged_current = pd.merge(full_dates_df_current, daily_df_current, on="Date", how="left").fillna(0)
-else:
-    merged_current = full_dates_df_current
-    merged_current["Distance"] = 0.0
+    merged_current["Date_Label"] = [str(int(d.split("-")[2])) for d in merged_current["Date"]]
 
-merged_current["Date_Label"] = [str(int(d.split("-")[2])) for d in merged_current["Date"]]
+    fig_curr = px.bar(merged_current, x="Date_Label", y="Distance")
+    fig_curr.update_traces(marker_color="#0284C7", cliponaxis=False, hoverinfo="x+y")
 
-fig_curr = px.bar(merged_current, x="Date_Label", y="Distance")
-fig_curr.update_traces(marker_color="#0284C7", cliponaxis=False, hoverinfo="x+y")
+    tick_vals_list = [str(d) for d in range(1, last_day + 1) if (d - 1) % 3 == 0 or d == last_day]
 
-tick_vals_list = [str(d) for d in range(1, last_day + 1) if (d - 1) % 3 == 0 or d == last_day]
-
-fig_curr.update_layout(
-    margin=dict(l=0, r=0, t=10, b=0),
-    height=140,
-    xaxis_title=None,
-    yaxis_title=None,
-    plot_bgcolor="rgba(0,0,0,0)",
-    paper_bgcolor="rgba(0,0,0,0)",
-    xaxis=dict(fixedrange=True, showgrid=False, tickmode="array", tickvals=tick_vals_list, ticktext=tick_vals_list, tickfont=dict(size=10, color="#64748B")),
-    yaxis=dict(fixedrange=True, showgrid=True, gridcolor="#E2E8F0", tickfont=dict(size=10, color="#64748B"), rangemode="tozero"),
-    font=dict(size=10, color="#475569")
-)
-st.plotly_chart(fig_curr, use_container_width=True, key="chart_current_month", config={'displayModeBar': False, 'scrollZoom': False, 'staticPlot': True})
-
-st.markdown("<hr style='margin: 25px 0 15px 0; border: none; border-top: 1px solid #E2E8F0;'>", unsafe_allow_html=True)
+    fig_curr.update_layout(
+        margin=dict(l=0, r=0, t=10, b=0),
+        height=140,
+        xaxis_title=None,
+        yaxis_title=None,
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+        xaxis=dict(fixedrange=True, showgrid=False, tickmode="array", tickvals=tick_vals_list, ticktext=tick_vals_list, tickfont=dict(size=10, color="#64748B")),
+        yaxis=dict(fixedrange=True, showgrid=True, gridcolor="#E2E8F0", tickfont=dict(size=10, color="#64748B"), rangemode="tozero"),
+        font=dict(size=10, color="#475569")
+    )
+    st.plotly_chart(fig_curr, use_container_width=True, key="chart_current_month", config={'displayModeBar': False, 'scrollZoom': False, 'staticPlot': True})
 
 def get_past_12_months():
     months = []
@@ -290,84 +287,83 @@ def get_bar_color(row):
 
 monthly_summary_12m["Color"] = monthly_summary_12m.apply(get_bar_color, axis=1)
 
-st.markdown("<p style='font-size:1.1rem; font-weight:900; color:#0F172A; margin-bottom:4px;'>📈 최근 12개월 운동 현황</p>", unsafe_allow_html=True)
+# 2. 최근 12개월 운동 현황 (접고 펼치기 적용: expanded=True)
+with st.expander("📈 최근 12개월 운동 현황", expanded=True):
+    fig_all_months = px.bar(
+        monthly_summary_12m,
+        x="Month_Label",
+        y="Total_Distance"
+    )
 
-fig_all_months = px.bar(
-    monthly_summary_12m,
-    x="Month_Label",
-    y="Total_Distance"
-)
+    fig_all_months.update_traces(
+        marker_color=monthly_summary_12m["Color"],
+        cliponaxis=False,
+        hoverinfo="none"
+    )
 
-fig_all_months.update_traces(
-    marker_color=monthly_summary_12m["Color"],
-    cliponaxis=False,
-    hoverinfo="none"
-)
+    fig_all_months.add_hline(
+        y=GOAL_KM, 
+        line_dash="dot", 
+        line_color="#64748B", 
+        line_width=1.5
+    )
 
-fig_all_months.add_hline(
-    y=GOAL_KM, 
-    line_dash="dot", 
-    line_color="#64748B", 
-    line_width=1.5
-)
+    annotations_list = []
+    for idx, row in monthly_summary_12m.iterrows():
+        val_str = f"{row['Total_Distance']:.1f}"
+        annotations_list.append(dict(
+            x=row["Month_Label"],
+            y=row["Total_Distance"],
+            text=val_str,
+            showarrow=False,
+            xanchor="center",
+            yanchor="bottom",
+            yshift=2,
+            font=dict(size=9, color="#0F172A", family="Pretendard")
+        ))
 
-annotations_list = []
-for idx, row in monthly_summary_12m.iterrows():
-    val_str = f"{row['Total_Distance']:.1f}"
-    annotations_list.append(dict(
-        x=row["Month_Label"],
-        y=row["Total_Distance"],
-        text=val_str,
-        showarrow=False,
-        xanchor="center",
-        yanchor="bottom",
-        yshift=2,
-        font=dict(size=9, color="#0F172A", family="Pretendard")
-    ))
+    fig_all_months.update_layout(
+        annotations=annotations_list,
+        margin=dict(l=10, r=10, t=10, b=0),
+        height=220,
+        xaxis_title=None,
+        yaxis_title=None,
+        showlegend=False,
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+        xaxis=dict(fixedrange=True, showgrid=False, tickfont=dict(size=8, color="#64748B")),
+        yaxis=dict(
+            fixedrange=True, 
+            showgrid=True, 
+            gridcolor="#E2E8F0", 
+            tickfont=dict(size=10, color="#64748B"), 
+            rangemode="tozero"
+        ),
+        font=dict(size=10, color="#475569")
+    )
+    st.plotly_chart(fig_all_months, use_container_width=True, key="chart_all_months", config={'displayModeBar': False, 'scrollZoom': False, 'staticPlot': True})
 
-fig_all_months.update_layout(
-    annotations=annotations_list,
-    margin=dict(l=10, r=10, t=10, b=0),
-    height=220,
-    xaxis_title=None,
-    yaxis_title=None,
-    showlegend=False,
-    plot_bgcolor="rgba(0,0,0,0)",
-    paper_bgcolor="rgba(0,0,0,0)",
-    xaxis=dict(fixedrange=True, showgrid=False, tickfont=dict(size=8, color="#64748B")),
-    yaxis=dict(
-        fixedrange=True, 
-        showgrid=True, 
-        gridcolor="#E2E8F0", 
-        tickfont=dict(size=10, color="#64748B"), 
-        rangemode="tozero"
-    ),
-    font=dict(size=10, color="#475569")
-)
-st.plotly_chart(fig_all_months, use_container_width=True, key="chart_all_months", config={'displayModeBar': False, 'scrollZoom': False, 'staticPlot': True})
+# 3. 월별 현황 요약 (접고 펼치기 적용: 초기에는 접혀있도록 expanded=False 설정, 원하시면 True로 변경 가능)
+with st.expander("📋 월별 현황 요약", expanded=False):
+    display_df = monthly_summary_12m.sort_values("Month", ascending=False).copy()
+    display_df["총 거리 (km)"] = display_df["Total_Distance"].apply(lambda x: f"{x:.2f}")
+    display_df["러닝 횟수"] = display_df["Run_Count"].astype(str) + "회"
+    display_df["목표 달성률"] = (display_df["Total_Distance"] / GOAL_KM * 100).round(1).astype(str) + "%"
 
-st.write("")
-st.markdown("<p style='font-size:1.1rem; font-weight:900; color:#0F172A; margin-bottom:10px;'>📋 월별 현황 요약</p>", unsafe_allow_html=True)
+    display_df = display_df.rename(columns={
+        "Month_Label": "조회 월"
+    })[["조회 월", "총 거리 (km)", "러닝 횟수", "목표 달성률"]].reset_index(drop=True)
 
-display_df = monthly_summary_12m.sort_values("Month", ascending=False).copy()
-display_df["총 거리 (km)"] = display_df["Total_Distance"].apply(lambda x: f"{x:.2f}")
-display_df["러닝 횟수"] = display_df["Run_Count"].astype(str) + "회"
-display_df["목표 달성률"] = (display_df["Total_Distance"] / GOAL_KM * 100).round(1).astype(str) + "%"
+    table_html = "<table class='custom-table'><thead><tr>"
+    for col in display_df.columns:
+        table_html += f"<th>{col}</th>"
+    table_html += "</tr></thead><tbody>"
 
-display_df = display_df.rename(columns={
-    "Month_Label": "조회 월"
-})[["조회 월", "총 거리 (km)", "러닝 횟수", "목표 달성률"]].reset_index(drop=True)
+    for _, row in display_df.iterrows():
+        table_html += "<tr>"
+        for val in row:
+            table_html += f"<td>{val}</td>"
+        table_html += "</tr>"
+    table_html += "</tbody></table>"
 
-table_html = "<table class='custom-table'><thead><tr>"
-for col in display_df.columns:
-    table_html += f"<th>{col}</th>"
-table_html += "</tr></thead><tbody>"
-
-for _, row in display_df.iterrows():
-    table_html += "<tr>"
-    for val in row:
-        table_html += f"<td>{val}</td>"
-    table_html += "</tr>"
-table_html += "</tbody></table>"
-
-st.markdown(table_html, unsafe_allow_html=True)
+    st.markdown(table_html, unsafe_allow_html=True)
