@@ -204,8 +204,8 @@ sub_cards_html = (
 )
 st.markdown(sub_cards_html, unsafe_allow_html=True)
 
-# 1. 이번 달 운동 현황 (접고 펼치기 익스팬더)
-with st.expander(f"📊 {now.month}월 운동 현황", expanded=True):
+# 1. 이번 달 운동 현황 (이모지 제거하여 글자 겹침 버그 방지)
+with st.expander(f"{now.month}월 운동 현황", expanded=True):
     _, last_day = calendar.monthrange(now.year, now.month)
     all_dates_current = [f"{now.year}-{now.month:02d}-{day:02d}" for day in range(1, last_day + 1)]
     full_dates_df_current = pd.DataFrame({"Date": all_dates_current})
@@ -291,8 +291,8 @@ def get_bar_color(row):
 
 monthly_summary_12m["Color"] = monthly_summary_12m.apply(get_bar_color, axis=1)
 
-# 2. 최근 12개월 운동 현황 (접고 펼치기 익스팬더)
-with st.expander("📈 최근 12개월 운동 현황", expanded=True):
+# 2. 최근 12개월 운동 현황 (이모지 제거)
+with st.expander("최근 12개월 운동 현황", expanded=True):
     fig_all_months = px.bar(
         monthly_summary_12m,
         x="Month_Label",
@@ -347,4 +347,27 @@ with st.expander("📈 최근 12개월 운동 현황", expanded=True):
     )
     st.plotly_chart(fig_all_months, use_container_width=True, key="chart_all_months", config={'displayModeBar': False, 'scrollZoom': False, 'staticPlot': True})
 
-# 3. 월별 현황 요약 (접고 펼치기 익스팬더
+# 3. 월별 현황 요약 (이모지 제거)
+with st.expander("월별 현황 요약", expanded=False):
+    display_df = monthly_summary_12m.sort_values("Month", ascending=False).copy()
+    display_df["총 거리 (km)"] = display_df["Total_Distance"].apply(lambda x: f"{x:.2f}")
+    display_df["러닝 횟수"] = display_df["Run_Count"].astype(str) + "회"
+    display_df["목표 달성률"] = (display_df["Total_Distance"] / GOAL_KM * 100).round(1).astype(str) + "%"
+
+    display_df = display_df.rename(columns={
+        "Month_Label": "조회 월"
+    })[["조회 월", "총 거리 (km)", "러닝 횟수", "목표 달성률"]].reset_index(drop=True)
+
+    table_html = "<table class='custom-table'><thead><tr>"
+    for col in display_df.columns:
+        table_html += f"<th>{col}</th>"
+    table_html += "</tr></thead><tbody>"
+
+    for _, row in display_df.iterrows():
+        table_html += "<tr>"
+        for val in row:
+            table_html += f"<td>{val}</td>"
+        table_html += "</tr>"
+    table_html += "</tbody></table>"
+
+    st.markdown(table_html, unsafe_allow_html=True)
