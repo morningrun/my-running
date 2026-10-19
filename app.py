@@ -129,44 +129,4 @@ header {visibility: hidden;}
     margin-left: 2px;
 }
 .hero-percent-tag {
-    background: linear-gradient(135deg, #38BDF8 0%, #0284C7 100%);
-    color: #FFFFFF;
-    padding: 6px 14px;
-    border-radius: 20px;
-    font-size: 0.95rem;
-    font-weight: 800;
-    box-shadow: 0 4px 12px rgba(56, 189, 248, 0.35);
-    display: inline-block;
-    text-align: center;
-}
-
-/* 커스텀 프로그래스 바 및 안정화 레이아웃 */
-.progress-wrapper {
-    margin-top: 24px;
-    margin-bottom: 10px;
-    padding-top: 20px; /* 배지 공간 확보 */
-}
-.custom-progress-container {
-    position: relative;
-    width: 100%;
-    background-color: #E2E8F0;
-    border-radius: 10px;
-    height: 12px;
-}
-.custom-progress-bar {
-    height: 100%;
-    background: linear-gradient(90deg, #38BDF8 0%, #0284C7 100%);
-    border-radius: 10px;
-}
-.custom-progress-badge {
-    position: absolute;
-    top: -22px;
-    transform: translateX(-50%);
-    background: #0284C7;
-    color: #FFFFFF;
-    font-size: 0.68rem;
-    font-weight: 800;
-    padding: 1px 6px;
-    border-radius: 6px;
-    white-space: nowrap;
-    box
+    background: linear-
