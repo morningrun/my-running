@@ -22,7 +22,6 @@ st.markdown("""
 <style>
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
 
-/* 스트림릿 익스팬더 내부 아이콘 영역을 제외한 곳에만 Pretendard 적용 */
 .crew-title, .crew-subtitle, .hero-card, .sub-card, .custom-table, .stMarkdown p { 
     font-family: 'Pretendard', sans-serif !important; 
 }
@@ -55,7 +54,6 @@ header { visibility: hidden; }
 .sub-accent { color: #0284C7; }
 .sub-accent-red { color: #E11D48; }
 
-/* 스트림릿 기본 익스팬더 디자인 및 굵은 제목 설정 */
 div[data-testid="stExpander"] { background-color: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 16px; margin-bottom: 14px; box-shadow: 0 4px 12px -2px rgba(148, 163, 184, 0.08); overflow: hidden; }
 div[data-testid="stExpander"] summary { font-weight: 900 !important; color: #0F172A !important; font-size: 1.05rem !important; font-family: 'Pretendard', sans-serif !important; }
 
@@ -77,7 +75,13 @@ def fetch_data(a_id, key, start):
     return res.json() if res.status_code == 200 else []
 
 activities = fetch_data(ATHLETE_ID, API_KEY, f"{now.year - 2}-01-01")
-records = [{"Date": a.get("start_date_local", "")[:10], "Distance": round(a.get("distance", 0) / 1000, 2)} for a in activities if a.get("type"] == "Run"]
+records = []
+if activities:
+    for a in activities:
+        if a.get("type") == "Run":
+            d_val = round(a.get("distance", 0) / 1000, 2)
+            date_val = a.get("start_date_local", "")[:10]
+            records.append({"Date": date_val, "Distance": d_val})
 
 df_all = pd.DataFrame(records)
 if not df_all.empty:
@@ -106,4 +110,90 @@ if not df_curr.empty:
 else:
     tot_km, run_cnt, rem_km, today_km, pct, exp_km = 0.0, 0, GOAL_KM, 0.0, 0.0, 0.0
 
-mascot_html = f'<img src="data:image/png;base64,{mascot_b64}" style="width: 56px; height: 56px; border-radius
+mascot_html = f'<img src="data:image/png;base64,{mascot_b64}" style="width: 56px; height: 56px; border-radius: 50%; border: 2px solid #38BDF8; object-fit: contain; background: #FFFFFF; padding: 3px; display: block; margin-left: auto;">' if mascot_b64 else '<span style="font-size: 1.8rem; display: block; text-align: right;">🏃💨</span>'
+
+st.markdown(f'''
+<div class="hero-card">
+    <div class="hero-top-row">
+        <div><span class="hero-goal-title">🎯 {now.strftime('%y년 %m월')} 목표</span><span class="hero-goal-target" style="margin-left: 8px;">{int(GOAL_KM)} km</span></div>
+        <div style="width: 56px;">{mascot_html}</div>
+    </div>
+    <div class="hero-bottom-row">
+        <div><span class="hero-km-highlight">{tot_km:.2f}</span><span class="hero-km-label">km 달성</span></div>
+        <div><span class="hero-percent-tag">{pct}%</span></div>
+    </div>
+</div>
+''', unsafe_allow_html=True)
+
+bar_w = min(100.0, pct)
+st.markdown(f'<div class="progress-wrapper"><div class="custom-progress-container"><div class="custom-progress-bar" style="width: {bar_w}%;"></div><div class="custom-progress-badge" style="left: {bar_w}%;">{pct}%</div></div></div>', unsafe_allow_html=True)
+
+msg = f"🔥 목표 달성 완료! 현재 {pct}% 달성 중 (총 {run_cnt}회)" if tot_km >= GOAL_KM else f"🔥 이번 달 총 {run_cnt}회 달리셨어요!"
+st.markdown(f"<p style='font-size:0.85rem; font-weight:800; color:#0F172A; margin-top:4px;'>{msg}</p>", unsafe_allow_html=True)
+st.write("")
+
+st.markdown(f'''
+<div class="grid-container">
+    <div class="sub-card"><div class="sub-card-header"><span class="sub-icon">🏅</span><span class="sub-label">오늘 운동 거리</span></div><div class="sub-value sub-value-large sub-accent">{today_km:.2f} km</div></div>
+    <div class="sub-card"><div class="sub-card-header"><span class="sub-icon">🎯</span><span class="sub-label">남은 거리</span></div><div class="sub-value sub-value-large sub-accent-red">{rem_km:.2f} km</div></div>
+    <div class="sub-card"><div class="sub-card-header"><span class="sub-icon">⏳</span><span class="sub-label">남은 기간</span></div><div class="sub-value sub-value-large">{rem_days} 일</div></div>
+    <div class="sub-card"><div class="sub-card-header"><span class="sub-icon">📈</span><span class="sub-label">월 예상 거리</span></div><div class="sub-value sub-value-large">{exp_km:.2f} km</div></div>
+</div>
+''', unsafe_allow_html=True)
+with st.expander(f"📊 {now.month}월 운동 현황", expanded=True):
+    full_dates = pd.DataFrame({"Date": [f"{now.year}-{now.month:02d}-{d:02d}" for d in range(1, days_in_m + 1)]})
+    merged_curr = pd.merge(full_dates, df_curr.groupby("Date", as_index=False)["Distance"].sum(), on="Date", how="left").fillna(0) if not df_curr.empty else full_dates.assign(Distance=0.0)
+    merged_curr["Date_Label"] = [str(int(d.split("-")[2])) for d in merged_curr["Date"]]
+    
+    fig_c = px.bar(merged_curr, x="Date_Label", y="Distance")
+    fig_c.update_traces(marker_color="#0284C7", cliponaxis=False, hoverinfo="x+y")
+    tick_v = [str(d) for d in range(1, days_in_m + 1) if (d - 1) % 3 == 0 or d == days_in_m]
+    fig_c.update_layout(margin=dict(l=0, r=0, t=10, b=0), height=140, xaxis_title=None, yaxis_title=None, plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", xaxis=dict(fixedrange=True, showgrid=False, tickmode="array", tickvals=tick_v, ticktext=tick_v, tickfont=dict(size=10, color="#64748B")), yaxis=dict(fixedrange=True, showgrid=True, gridcolor="#E2E8F0", tickfont=dict(size=10, color="#64748B"), rangemode="tozero"), font=dict(size=10, color="#475569"))
+    st.plotly_chart(fig_c, use_container_width=True, key="chart_c", config={'displayModeBar': False, 'staticPlot': True})
+
+def get_12m():
+    y, m = now.year, now.month
+    res = []
+    for _ in range(12):
+        res.append(f"{y}-{m:02d}")
+        m -= 1
+        if m == 0:
+            m = 12
+            y -= 1
+    res.reverse()
+    return res
+
+df_12 = pd.DataFrame({"Month": get_12m()})
+if not df_all.empty:
+    m_sum = df_all.groupby("Month", as_index=False).agg(Total_Distance=("Distance", "sum"), Run_Count=("Distance", "count"))
+    df_12 = pd.merge(df_12, m_sum, on="Month", how="left").fillna({"Total_Distance": 0.0, "Run_Count": 0})
+else:
+    df_12["Total_Distance"] = 0.0
+    df_12["Run_Count"] = 0
+
+df_12["Run_Count"] = df_12["Run_Count"].astype(int)
+df_12["Month_Label"] = df_12["Month"].apply(lambda x: f"{x[2:]}월")
+df_12["Color"] = df_12.apply(lambda r: "#34D399" if r["Month"] == cur_m_str else ("#1E3A8A" if r["Total_Distance"] >= GOAL_KM else "#94A3B8"), axis=1)
+
+with st.expander("📈 최근 12개월 운동 현황", expanded=True):
+    fig_12 = px.bar(df_12, x="Month_Label", y="Total_Distance")
+    fig_12.update_traces(marker_color=df_12["Color"], cliponaxis=False, hoverinfo="none")
+    fig_12.add_hline(y=GOAL_KM, line_dash="dot", line_color="#64748B", line_width=1.5)
+    
+    ann = [dict(x=r["Month_Label"], y=r["Total_Distance"], text=f"{r['Total_Distance']:.1f}", showarrow=False, xanchor="center", yanchor="bottom", yshift=2, font=dict(size=9, color="#0F172A", family="Pretendard")) for _, r in df_12.iterrows()]
+    fig_12.update_layout(annotations=ann, margin=dict(l=10, r=10, t=10, b=0), height=220, xaxis_title=None, yaxis_title=None, showlegend=False, plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", xaxis=dict(fixedrange=True, showgrid=False, tickfont=dict(size=8, color="#64748B")), yaxis=dict(fixedrange=True, showgrid=True, gridcolor="#E2E8F0", tickfont=dict(size=10, color="#64748B"), rangemode="tozero"), font=dict(size=10, color="#475569"))
+    st.plotly_chart(fig_12, use_container_width=True, key="chart_12", config={'displayModeBar': False, 'staticPlot': True})
+
+with st.expander("📋 월별 현황 요약", expanded=False):
+    t_df = df_12.sort_values("Month", ascending=False).copy()
+    t_df["조회 월"] = t_df["Month_Label"]
+    t_df["총 거리 (km)"] = t_df["Total_Distance"].apply(lambda x: f"{x:.2f}")
+    t_df["러닝 횟수"] = t_df["Run_Count"].astype(str) + "회"
+    t_df["목표 달성률"] = (t_df["Total_Distance"] / GOAL_KM * 100).round(1).astype(str) + "%"
+    
+    disp = t_df[["조회 월", "총 거리 (km)", "러닝 횟수", "목표 달성률"]].reset_index(drop=True)
+    html = "<table class='custom-table'><thead><tr>" + "".join([f"<th>{c}</th>" for c in disp.columns]) + "</tr></thead><tbody>"
+    for _, row in disp.iterrows():
+        html += "<tr>" + "".join([f"<td>{v}</td>" for v in row]) + "</tr>"
+    html += "</tbody></table>"
+    st.markdown(html, unsafe_allow_html=True)
