@@ -104,4 +104,75 @@ week_days = ['월', '화', '수', '목', '금', '토', '일']
 current_weekday = week_days[now.weekday()]
 date_text = f"{year}.{month_num}.{current_day:02d} ({current_weekday})"
 
-header_html
+header_html = (
+    '<div class="crew-header">'
+    '<div class="crew-title">이실권 200CREW</div>'
+    f'<div class="crew-subtitle"><span>🗓️</span> {date_text}</div>'
+    '</div>'
+)
+st.markdown(header_html, unsafe_allow_html=True)
+
+current_month_str = now.strftime("%Y-%m")
+df_current = df_all[(df_all["Month"] == current_month_str)] if not df_all.empty else pd.DataFrame()
+
+days_in_month = calendar.monthrange(now.year, now.month)[1]
+remaining_days = max(1, days_in_month - current_day + 1)
+GOAL_KM = 200.0
+
+if not df_current.empty:
+    total_km = round(df_current["Distance"].sum(), 2)
+    run_count = len(df_current)
+    remaining_km = max(0.0, round(GOAL_KM - total_km, 2))
+    df_today = df_current[df_current["Date"] == today_date_str]
+    today_km = round(df_today["Distance"].sum(), 2) if not df_today.empty else 0.0
+    progress = total_km / GOAL_KM
+    percent = round(progress * 100, 1)
+    expected_total_km = round((total_km / current_day) * days_in_month, 2)
+else:
+    total_km, run_count, remaining_km, today_km, progress, percent = 0.0, 0, GOAL_KM, 0.0, 0.0, 0.0
+    expected_total_km = 0.0
+
+if mascot_base64:
+    mascot_html = f'<img src="data:image/png;base64,{mascot_base64}" style="width: 56px; height: 56px; border-radius: 50%; border: 2px solid #38BDF8; object-fit: contain; background-color: #FFFFFF; padding: 3px; display: block; margin-left: auto;">'
+else:
+    mascot_html = '<span style="font-size: 1.8rem; display: block; text-align: right;">🏃💨</span>'
+
+dynamic_goal_title = f"🎯 {now.strftime('%y년 %m월')} 목표"
+
+hero_html = (
+    '<div class="hero-card">'
+    '<div class="hero-top-row">'
+    '<div>'
+    f'<span class="hero-goal-title">{dynamic_goal_title}</span>'
+    f'<span class="hero-goal-target" style="margin-left: 8px;">{int(GOAL_KM)} km</span>'
+    '</div>'
+    f'<div style="width: 56px;">{mascot_html}</div>'
+    '</div>'
+    '<div class="hero-bottom-row">'
+    '<div>'
+    f'<span class="hero-km-highlight">{total_km:.2f}</span>'
+    '<span class="hero-km-label">km 달성</span>'
+    '</div>'
+    '<div>'
+    f'<span class="hero-percent-tag">{percent}%</span>'
+    '</div>'
+    '</div>'
+    '</div>'
+)
+st.markdown(hero_html, unsafe_allow_html=True)
+
+bar_width = min(100.0, percent)
+custom_progress_html = (
+    '<div class="progress-wrapper">'
+    '<div class="custom-progress-container">'
+    f'<div class="custom-progress-bar" style="width: {bar_width}%;"></div>'
+    f'<div class="custom-progress-badge" style="left: {bar_width}%;">{percent}%</div>'
+    '</div>'
+    '</div>'
+)
+st.markdown(custom_progress_html, unsafe_allow_html=True)
+
+if progress > 1.0:
+    st.markdown(f"<p style='font-size:0.85rem; font-weight:800; color:#0F172A; margin-top:4px;'>🔥 목표 달성 완료! 현재 {percent}% 달성 중 (총 {run_count}회)</p>", unsafe_allow_html=True)
+else:
+    st.markdown(f"<p style='font-size:0.85rem; font-weight:800; color:#0F172A; margin-top:4px;'>🔥 이번 달 총 {run_count}회 달리셨어요!</p>", unsafe_allow
