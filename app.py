@@ -99,7 +99,7 @@
 </div>
 
 <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbz7swuRlHY6ABel8DKy7QSa47DiHhuKKIhHi1GgexCZp8C0CFM6_m2X9LYKO0cVCxY0Jw/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbyd5Zra94mKsjXsAc5wni5UjuKrTVXd83QYH9KZEuQYV74DCDOouAXeiK6TNseC7u7ebA/exec";
 
     let globalMembers = [];
     let globalLogs = [];
