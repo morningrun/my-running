@@ -99,8 +99,7 @@
 </div>
 
 <script>
-    // 💡 형님의 최신 Apps Script 웹 앱 URL 입력 확인
-    const API_URL = "https://script.google.com/macros/s/AKfycbyKxHwe3Q1Eo7YzIsN9aXj6GhgUOaWfF7OO5y1CL742Ur07VjvQ05lfyeef5OmIBD4MLg/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbwvdM1L2DmlrkrJZZXqkzSO384gD77QdN_79bonlknndoSBA164v0Qp6ipa8dNdgTvIag/exec";
 
     let globalMembers = [];
     let globalLogs = [];
@@ -261,8 +260,14 @@
             if (data.success === false) throw new Error(data.message || "데이터 불러오기 실패");
 
             globalMembers = Array.isArray(data.members) ? data.members : [];
-            // 💡 서버 데이터를 유일한 신뢰 기준으로 삼아 리셋 방지 및 취소 상태 동기화
-            globalLogs = Array.isArray(data.logs) ? data.logs : [];
+            
+            // 💡 서버 데이터를 기준으로 삼되, 서버 응답이 일시적으로 비어있을 때 기존 로컬 데이터가 날아가지 않도록 안전 병합
+            const serverLogs = Array.isArray(data.logs) ? data.logs : [];
+            if (serverLogs.length > 0) {
+                globalLogs = serverLogs;
+            } else if (globalLogs.length > 0 && serverLogs.length === 0) {
+                console.log("서버 응답이 비어있어 기존 데이터를 유지합니다.");
+            }
 
             renderSaturdayVerticalList();
             if (!document.getElementById('tab-stats').classList.contains('hidden')) {
@@ -271,7 +276,7 @@
             return true;
         } catch (err) {
             console.error("데이터 로드 오류:", err);
-            document.getElementById('member-list').innerHTML = "<div style='color:#e74c3c; text-align:center; padding:20px;'>데이터 연결 오류. 새로고침해 주세요.</div>";
+            renderSaturdayVerticalList();
             return false;
         }
     }
@@ -402,7 +407,6 @@
             const result = await response.json();
             if (!result.success) throw new Error(result.message || '서버 저장 실패');
 
-            // 💡 서버 저장 직후 최신 데이터를 즉시 불러와서 동기화
             await loadData();
         } catch (err) {
             console.error('출석 저장 오류:', err);
@@ -424,7 +428,7 @@
             userMonthlyData[String(m.name).trim()] = {
                 score: {1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0, 10:0, 11:0, 12:0},
                 att:   {1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0, 10:0, 11:0, 12:0},
-                tardy: {1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0, 10:0, 11:0, 12:0},
+                    tardy: {1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0, 10:0, 11:0, 12:0},
                 comp:  {1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0, 10:0, 11:0, 12:0}
             };
         });
@@ -432,8 +436,6 @@
         globalLogs.forEach(log => {
             const name = String(log.name).trim();
             const score = Number(log.score);
-            const mMatch = String(log.date).match(/(\d+)/);
-            // 날짜 문자열에서 월 추출
             let m = 0;
             const parts = strictYMD(log.date).split('-');
             if (parts.length >= 2) {
