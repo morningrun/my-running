@@ -6,7 +6,6 @@
     <title>토달 출석부</title>
     
     <!-- 💡 [핵심] 스마트폰 홈 화면 추가 시 앱처럼 보이게 해주는 예쁜 아이콘 설정 -->
-    <!-- 형님은 'icon.png'라는 이름의 이미지를 준비해서 HTML 파일과 같은 위치에 두시면 됩니다! -->
     <link rel="apple-touch-icon" href="icon.png">        <!-- 아이폰용 (가장 중요) -->
     <link rel="icon" sizes="192x192" href="icon.png">  <!-- 안드로이드(갤럭시)용 -->
     <link rel="icon" href="icon.png" type="image/png"> <!-- 브라우저 탭용 파비콘 -->
@@ -408,19 +407,26 @@
     }
 
     function checkIn(name, score) {
+        // 💡 [중복 방지 보완] 이미 해당 날짜/이름으로 출석 기록이 있는지 로컬 배열에서 먼저 완벽히 검사
         let already = globalLogs.find(l => l.name === name && l.date.trim() === selectedDateStr.trim() && Number(l.score) > 0);
         if (already) {
-            alert(`[${name}]님은 이미 이날 출석이 완료되었습니다. 변경하려면 [취소] 후 다시 선택해 주세요.`);
+            alert(`[${name}]님은 이미 해당 날짜에 출석 체크가 완료되었습니다. 변경하려면 먼저 [취소] 후 다시 선택해 주세요.`);
+            renderCheckinList(); // 화면 즉시 동기화
             return;
         }
-        let label = (score === 5) ? '지각(+5점)' : '출석(+10점)';
+
+        let label = (score === 5) ? '지각(+5점)' : (score === 99 ? '대회(+10점)' : '출석(+10점)');
         if(!confirm(`[${selectedDateStr.replace(/^\d{4}년\s*/, '')}] [${name}]님을 [${label}]으로 기록하시겠습니까?`)) return;
 
+        // 1. 기존 중복 기록을 깨끗이 제거한 후 새로운 기록 추가
         globalLogs = globalLogs.filter(l => !(l.name === name && l.date.trim() === selectedDateStr.trim()));
         let mMatch = selectedDateStr.match(/(\d+)월/);
         globalLogs.push({ date: selectedDateStr, name, month: mMatch ? parseInt(mMatch[1], 10) : 0, score });
 
+        // 2. 화면 즉시 갱신 (서버 응답을 기다리지 않고 바로 반영되어 연속 클릭 방지)
         renderCheckinList();
+
+        // 3. 서버 전송
         fetch(API_URL, {
             method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name, score, date: selectedDateStr })
@@ -430,9 +436,13 @@
     function cancelCheckIn(name) {
         if(!confirm(`[${selectedDateStr.replace(/^\d{4}년\s*/, '')}] [${name}]님의 출석을 취소하시겠습니까?`)) return;
 
+        // 1. 로컬 배열에서 해당 기록 제거
         globalLogs = globalLogs.filter(l => !(l.name === name && l.date.trim() === selectedDateStr.trim()));
+        
+        // 2. 화면 즉시 갱신
         renderCheckinList();
 
+        // 3. 서버 전송 (score: 0으로 취소 반영)
         fetch(API_URL, {
             method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name, score: 0, date: selectedDateStr })
