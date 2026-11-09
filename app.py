@@ -100,7 +100,7 @@
 
 <script>
     // 💡 형님의 최신 Apps Script 웹 앱 URL 입력 확인
-    const API_URL = "https://script.google.com/macros/s/AKfycbxi6MQ5L8Oak-RK2wF9mRya1KVvUjDu65TizJrT3R4s66xmijWmlKwEGCSvfHbwLO4CKw/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbyKxHwe3Q1Eo7YzIsN9aXj6GhgUOaWfF7OO5y1CL742Ur07VjvQ05lfyeef5OmIBD4MLg/exec";
 
     let globalMembers = [];
     let globalLogs = [];
