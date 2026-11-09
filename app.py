@@ -101,7 +101,7 @@
 
 <script>
     // 💡 여기에 구글 웹 앱 URL을 넣어주세요!
-    const API_URL = "https://script.google.com/macros/s/AKfycbyPD-g3-AhImPFdQk_wBokuFr4iT8uWJN4U44xl6RqBbfkFBgGWe7Vz-csyv3GEbbE-4A/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbxFdQsJvsZAaZZWNX427AD-O0jC7Xiyqe8SHUXcpgO4bBF6T4G1cs2mfkFKnqZPP5Bc-w/exec";
 
     let globalMembers = [];
     let globalLogs = [];
