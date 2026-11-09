@@ -99,7 +99,6 @@
 </div>
 
 <script>
-    // 기본 고정 회원 명단 (서버 통신 없이 깔끔하게 관리)
     const DEFAULT_MEMBERS = [
         { name: "김경기" },
         { name: "김미향" },
@@ -112,8 +111,8 @@
 
     let globalMembers = DEFAULT_MEMBERS;
     let globalLogs = [];
-    let selectedDateStr = "";
-    let checkinSelectedMonth = String(new Date().getMonth() + 1) + "월";
+    let selectedDateStr = localStorage.getItem('todal_selected_date') || "";
+    let checkinSelectedMonth = localStorage.getItem('todal_selected_month') || (String(new Date().getMonth() + 1) + "월");
     let statsSelectedMonth = "전체";
 
     const currentYear = new Date().getFullYear();
@@ -151,6 +150,18 @@
                 document.querySelectorAll('#checkin-month-buttons .month-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 checkinSelectedMonth = m;
+                localStorage.setItem('todal_selected_month', m);
+                
+                // 해당 월의 첫 번째 토요일을 기본 선택으로 맞춤
+                const filtered = allSaturdays.filter(dStr => {
+                    const mMatch = dStr.match(/(\d+)월/);
+                    return mMatch && (mMatch[1] + "월") === m;
+                });
+                if (filtered.length > 0) {
+                    selectedDateStr = filtered[filtered.length - 1];
+                    localStorage.setItem('todal_selected_date', selectedDateStr);
+                }
+                
                 renderSaturdayVerticalList();
             };
             wrapper.appendChild(btn);
@@ -222,6 +233,7 @@
                 btn.innerText = dStr.replace(/^\d{4}년\s*/, '');
                 btn.onclick = () => {
                     selectedDateStr = dStr;
+                    localStorage.setItem('todal_selected_date', dStr);
                     renderSaturdayVerticalList();
                 };
             }
@@ -247,7 +259,6 @@
     }
 
     function loadData() {
-        // 스마트폰 자체 저장소(localStorage)에서 기록을 완벽하게 불러옴
         const localLogs = localStorage.getItem('todal_pure_logs');
         if (localLogs) {
             try {
@@ -355,7 +366,6 @@
             if (!confirm(`[${targetDate.replace(/^\d{4}년\s*/, '')}] [${cleanName}]님을 [${label}]으로 기록하시겠습니까?`)) return;
         }
 
-        // 동일 날짜·이름 기존 기록은 깨끗하게 지우고 새로 등록 (중복 원천 차단)
         globalLogs = globalLogs.filter(log => !(log.name === cleanName && log.date === targetDate));
         
         if (score > 0) {
@@ -368,7 +378,6 @@
             });
         }
 
-        // 스마트폰 로컬 저장소에 즉시 고정
         localStorage.setItem('todal_pure_logs', JSON.stringify(globalLogs));
         renderCheckinList();
     }
