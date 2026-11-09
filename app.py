@@ -234,7 +234,7 @@ assert n == 1, n
 
 # Keep the existing API URL; add a clear configuration comment.
 html = html.replace(
-    '    const API_URL = "https://script.google.com/macros/s/AKfycbzxSJMeaibxAkF9fZNOXgWuiVKY8ohYdFkEtX_Idj3gJbfVFQu1QCk-6G2isTUANpV-fQ/exec";',
+    '    const API_URL = "https://script.google.com/macros/s/AKfycbzuiwjnKvYr6cRq9Vej1sjxoOuceg5LW8hJkKZOH7UQYCSXAwDBrVls9khXY9hG-QsuXA/exec";',
     '    // Google Apps Script 웹 앱 배포 URL을 입력하세요.\n    const API_URL = "https://script.google.com/macros/s/AKfycbzxSJMeaibxAkF9fZNOXgWuiVKY8ohYdFkEtX_Idj3gJbfVFQu1QCk6G2isTUANpV-fQ/exec";'
 )
 # Correct exact URL back to source's known value (avoid accidental typo in explanatory replacement).
