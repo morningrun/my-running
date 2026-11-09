@@ -5,12 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>토달 출석부</title>
     
-    <!-- 📱 스마트폰 홈 화면 추가 시 앱처럼 보이게 해주는 설정 -->
+    <!-- 💡 [핵심] 스마트폰 홈 화면 추가 시 앱처럼 보이게 해주는 예쁜 아이콘 설정 -->
+    <!-- 형님은 'icon.png'라는 이름의 이미지를 준비해서 HTML 파일과 같은 위치에 두시면 됩니다! -->
+    <link rel="apple-touch-icon" href="icon.png">        <!-- 아이폰용 (가장 중요) -->
+    <link rel="icon" sizes="192x192" href="icon.png">  <!-- 안드로이드(갤럭시)용 -->
+    <link rel="icon" href="icon.png" type="image/png"> <!-- 브라우저 탭용 파비콘 -->
+
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="토달출석부">
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#2c3e50">
+    <meta name="theme-color" content="#2c3e50"> <!-- 상단바 색상 -->
 
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f0f2f5; margin: 0; padding: 10px; color: #333; -webkit-tap-highlight-color: transparent; }
@@ -97,7 +102,7 @@
 
 <script>
     // 💡 여기에 구글 웹 앱 URL을 넣어주세요!
-    const API_URL = "여기에_구글_웹_앱_URL을_넣으세요https://script.google.com/macros/s/AKfycbyPD-g3-AhImPFdQk_wBokuFr4iT8uWJN4U44xl6RqBbfkFBgGWe7Vz-csyv3GEbbE-4A/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbyPD-g3-AhImPFdQk_wBokuFr4iT8uWJN4U44xl6RqBbfkFBgGWe7Vz-csyv3GEbbE-4A/exec";
 
     let globalMembers = [];
     let globalLogs = [];
@@ -372,7 +377,6 @@
                 targetComp  = userMonthlyData[name].comp[mNum];
             }
 
-            // 💡 점수가 0점보다 큰 (활동 기록이 있는) 회원만 목록에 추가
             if (targetScore > 0) {
                 displayList.push({ name, score: targetScore, att: targetAtt, tardy: targetTardy, comp: targetComp });
             }
