@@ -99,7 +99,7 @@
 </div>
 
 <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbzLvp7XS-NsFPfi8lLSVhsM4KsYiSQfE-23cKTb4N8AfOTfrKmH9b1Vgx73NTAZj6rEeA/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbxFoJVVdoYM1-b2P445N-t-j36eN8r2Sc8gd0h8GBu6QafgUEJgohupTZOvbYuwdbMp5Q/exec";
 
     let globalMembers = [];
     let globalLogs = [];
@@ -118,8 +118,12 @@
         return `${years}년 ${months}월 ${days}일 ${weekDays[dateObj.getDay()]}`;
     }
 
-    function normalizeDateStr(str) {
+    function extractYMD(str) {
         if (!str) return "";
+        const match = String(str).match(/(\d{4}).*?(\d+).*?(\d+)/);
+        if (match) {
+            return match[1] + "-" + match[2] + "-" + match[3];
+        }
         return String(str).replace(/\s+/g, "").trim();
     }
 
@@ -293,10 +297,11 @@
         }
 
         const dayAttendance = {};
-        const targetNormalized = normalizeDateStr(selectedDateStr);
+        const targetYMD = extractYMD(selectedDateStr);
 
+        // 💡 요일 차이와 무관하게 연·월·일이 같으면 출석 상태 복원
         globalLogs.forEach(log => {
-            if (log.date && normalizeDateStr(log.date) === targetNormalized && Number(log.score) > 0) {
+            if (log.date && extractYMD(log.date) === targetYMD && Number(log.score) > 0) {
                 dayAttendance[String(log.name).trim()] = Number(log.score);
             }
         });
@@ -422,8 +427,8 @@
     }
 
     function checkIn(name, score) {
-        const targetNormalized = normalizeDateStr(selectedDateStr);
-        let already = globalLogs.find(l => l.name === name && normalizeDateStr(l.date) === targetNormalized && Number(l.score) > 0);
+        const targetYMD = extractYMD(selectedDateStr);
+        let already = globalLogs.find(l => l.name === name && extractYMD(l.date) === targetYMD && Number(l.score) > 0);
         
         if (already) {
             alert(`[${name}]님은 이미 해당 날짜에 출석 체크가 완료되었습니다. 변경하려면 먼저 [취소] 후 다시 선택해 주세요.`);
@@ -434,7 +439,7 @@
         let label = (score === 5) ? '지각(+5점)' : (score === 99 ? '대회(+10점)' : '출석(+10점)');
         if(!confirm(`[${selectedDateStr.replace(/^\d{4}년\s*/, '')}] [${name}]님을 [${label}]으로 기록하시겠습니까?`)) return;
 
-        globalLogs = globalLogs.filter(l => !(l.name === name && normalizeDateStr(l.date) === targetNormalized));
+        globalLogs = globalLogs.filter(l => !(l.name === name && extractYMD(l.date) === targetYMD));
         let mMatch = selectedDateStr.match(/(\d+)월/);
         globalLogs.push({ date: selectedDateStr, name, month: mMatch ? parseInt(mMatch[1], 10) : 0, score });
 
@@ -446,11 +451,11 @@
         }).catch(err => console.error(err));
     }
 
-    function cancelCheckIn(name) {
+    function cancelCheckIn(name, event) {
         if(!confirm(`[${selectedDateStr.replace(/^\d{4}년\s*/, '')}] [${name}]님의 출석을 취소하시겠습니까?`)) return;
 
-        const targetNormalized = normalizeDateStr(selectedDateStr);
-        globalLogs = globalLogs.filter(l => !(l.name === name && normalizeDateStr(l.date) === targetNormalized));
+        const targetYMD = extractYMD(selectedDateStr);
+        globalLogs = globalLogs.filter(l => !(l.name === name && extractYMD(l.date) === targetYMD));
         
         renderCheckinList();
 
