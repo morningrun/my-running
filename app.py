@@ -99,9 +99,18 @@
 </div>
 
 <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbwONzGS1zKDrdQN6HLjEAtiUVVk1s67PBagovg9Fy7akdWWGqrbeBadxY8xHarwZ15P/exec";
+    // 기본 고정 회원 명단 (서버 통신 없이 깔끔하게 관리)
+    const DEFAULT_MEMBERS = [
+        { name: "김경기" },
+        { name: "김미향" },
+        { name: "김은성" },
+        { name: "이실권" },
+        { name: "박지혜" },
+        { name: "김정균" },
+        { name: "은대영" }
+    ];
 
-    let globalMembers = [];
+    let globalMembers = DEFAULT_MEMBERS;
     let globalLogs = [];
     let selectedDateStr = "";
     let checkinSelectedMonth = String(new Date().getMonth() + 1) + "월";
@@ -238,7 +247,8 @@
     }
 
     function loadData() {
-        const localLogs = localStorage.getItem('todal_local_logs');
+        // 스마트폰 자체 저장소(localStorage)에서 기록을 완벽하게 불러옴
+        const localLogs = localStorage.getItem('todal_pure_logs');
         if (localLogs) {
             try {
                 globalLogs = JSON.parse(localLogs);
@@ -247,45 +257,14 @@
             }
         }
 
-        fetch(API_URL + "?action=load&t=" + Date.now(), { method: "GET", cache: "no-store" })
-        .then(res => res.json())
-        .then(data => {
-            globalMembers = Array.isArray(data.members) ? data.members : [];
-            
-            if (Array.isArray(data.logs) && data.logs.length > 0) {
-                const mergedMap = {};
-                // 서버 데이터를 우선으로 하되 동일 이름+날짜 중복을 맵 키로 원천 차단
-                data.logs.forEach(l => {
-                    if (Number(l.score) > 0) {
-                        mergedMap[l.date + "|" + l.name] = l;
-                    }
-                });
-                globalLogs = Object.values(mergedMap);
-                localStorage.setItem('todal_local_logs', JSON.stringify(globalLogs));
-            }
-
-            initCheckinMonthButtons();
-            initStatsMonthButtons();
-            renderSaturdayVerticalList();
-            if (!document.getElementById('tab-stats').classList.contains('hidden')) {
-                renderStats();
-            }
-        })
-        .catch(err => {
-            console.log("서버 통신 실패, 로컬 저장소 데이터로 실행합니다.");
-            initCheckinMonthButtons();
-            initStatsMonthButtons();
-            renderSaturdayVerticalList();
-        });
+        initCheckinMonthButtons();
+        initStatsMonthButtons();
+        renderSaturdayVerticalList();
     }
 
     function renderCheckinList() {
         const listDiv = document.getElementById('member-list');
         listDiv.innerHTML = '';
-        if (globalMembers.length === 0) {
-            listDiv.innerHTML = "<div style='text-align:center; color:#888; padding:20px;'>등록된 회원이 없습니다.</div>";
-            return;
-        }
 
         const dayAttendance = {};
         globalLogs.forEach(log => {
@@ -332,7 +311,6 @@
                 const button = document.createElement('button');
                 button.textContent = label;
                 button.className = className || '';
-                // 💡 핵심: 이미 출석 체크가 되어 있으면 다른 버튼은 누를 수 없게 막음 (중복 체크 원천 차단)
                 if (isChecked) {
                     button.disabled = true;
                     button.style.opacity = '0.4';
@@ -346,7 +324,6 @@
             makeButton('지각(+5)', 5, score === 5 ? 'selected-5' : '');
             makeButton('대회(+10)', 99, score === 99 ? 'selected-comp' : '');
 
-            // 취소 버튼은 체크되어 있을 때만 활성화
             if (isChecked) {
                 const cancelBtn = document.createElement('button');
                 cancelBtn.textContent = '취소';
@@ -365,7 +342,6 @@
         const cleanName = String(name).trim();
         const targetDate = selectedDateStr;
 
-        // 💡 1차 중복 방지: 이미 같은 날짜에 기록이 있는데 또 누르면 막음 (취소 제외)
         const existing = globalLogs.find(log => log.name === cleanName && log.date === targetDate && Number(log.score) > 0);
         if (score > 0 && existing) {
             alert(`[${cleanName}]님은 이미 출석 체크가 완료되었습니다.`);
@@ -379,7 +355,7 @@
             if (!confirm(`[${targetDate.replace(/^\d{4}년\s*/, '')}] [${cleanName}]님을 [${label}]으로 기록하시겠습니까?`)) return;
         }
 
-        // 💡 2차: 동일 날짜·이름 기존 기록은 배열에서 완전히 제거 후 새로 등록 (절대 중복 쌓임 방지)
+        // 동일 날짜·이름 기존 기록은 깨끗하게 지우고 새로 등록 (중복 원천 차단)
         globalLogs = globalLogs.filter(log => !(log.name === cleanName && log.date === targetDate));
         
         if (score > 0) {
@@ -392,28 +368,14 @@
             });
         }
 
-        // 로컬 저장소에 고정
-        localStorage.setItem('todal_local_logs', JSON.stringify(globalLogs));
+        // 스마트폰 로컬 저장소에 즉시 고정
+        localStorage.setItem('todal_pure_logs', JSON.stringify(globalLogs));
         renderCheckinList();
-
-        // 3차: 서버(구글 시트)에 전송하여 동기화
-        const params = new URLSearchParams({
-            action: 'save',
-            name: cleanName,
-            score: String(score),
-            date: targetDate,
-            t: String(Date.now())
-        });
-
-        fetch(API_URL + '?' + params.toString(), { method: 'GET', cache: 'no-store' })
-            .then(res => res.json())
-            .catch(err => console.log("서버 전송 실패, 로컬에 저장됨"));
     }
 
     function renderStats() {
         const statsDiv = document.getElementById('stats-list');
         statsDiv.innerHTML = '';
-        if (globalMembers.length === 0) return;
 
         const userMonthlyData = {};
         globalMembers.forEach(m => {
@@ -425,7 +387,6 @@
             };
         });
 
-        // 💡 통계 계산 시에도 동일한 이름과 날짜의 데이터는 중복 합산되지 않도록 키값으로 필터링
         const uniqueLogMap = {};
         globalLogs.forEach(log => {
             if (Number(log.score) > 0) {
