@@ -99,8 +99,7 @@
 </div>
 
 <script>
-    // 💡 형님의 웹 앱 URL이 정확히 들어가 있는지 확인해주세요!
-    const API_URL = "https://script.google.com/macros/s/AKfycbzc_y28hcPshwsGwLEsGVqD6UHknRoM_GvPoUmAvoGuw8Pu0oJAmL4ZNLZvql5JJErjaA/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbw0pPHbgjo-zVVNU0KYpw1PPQgBWhqaGoYssy7qBj4ljm1ZdaE6Qd-a9PKjRqSr7fXWDA/exec";
 
     let globalMembers = [];
     let globalLogs = [];
@@ -134,9 +133,7 @@
     function getAllSaturdaysOfCurrentYear() {
         const saturdays = [];
         let d = new Date(currentYear, 0, 1);
-        while (d.getDay() !== 6) {
-            d.setDate(d.getDate() + 1);
-        }
+        while (d.getDay() !== 6) d.setDate(d.getDate() + 1);
         while (d.getFullYear() === currentYear) {
             saturdays.push(formatDateToString(new Date(d)));
             d.setDate(d.getDate() + 7);
@@ -149,9 +146,7 @@
     function initCheckinMonthButtons() {
         const wrapper = document.getElementById('checkin-month-buttons');
         wrapper.innerHTML = '';
-        const months = ["1월", "2월", "3월", "4월", "5월", "6월", "7월", "8월", "9월", "10월", "11월", "12월"];
-        
-        months.forEach(m => {
+        ["1월","2월","3월","4월","5월","6월","7월","8월","9월","10월","11월","12월"].forEach(m => {
             const btn = document.createElement('button');
             btn.className = `month-btn ${m === checkinSelectedMonth ? 'active' : ''}`;
             btn.innerText = m;
@@ -168,9 +163,7 @@
     function initStatsMonthButtons() {
         const wrapper = document.getElementById('stats-month-buttons');
         wrapper.innerHTML = '';
-        const months = ["전체", "1월", "2월", "3월", "4월", "5월", "6월", "7월", "8월", "9월", "10월", "11월", "12월"];
-        
-        months.forEach(m => {
+        ["전체","1월","2월","3월","4월","5월","6월","7월","8월","9월","10월","11월","12월"].forEach(m => {
             const btn = document.createElement('button');
             btn.className = `month-btn ${m === statsSelectedMonth ? 'active' : ''}`;
             btn.innerText = m;
@@ -188,7 +181,6 @@
         const wrapper = document.getElementById('saturday-vertical-wrapper');
         const header = document.getElementById('saturday-list-header');
         wrapper.innerHTML = '';
-
         header.innerText = `📅 ${currentYear}년 ${checkinSelectedMonth} 토달 출석현황`;
 
         const filteredSaturdays = allSaturdays.filter(dStr => {
@@ -197,7 +189,7 @@
         });
 
         if (filteredSaturdays.length === 0) {
-            wrapper.innerHTML = "<div style='padding:10px; color:#888; font-size:0.9rem;'>해당 월에 토요일이 없습니다.</div>";
+            wrapper.innerHTML = "<div style='padding:10px; color:#888;'>해당 월에 토요일이 없습니다.</div>";
             return;
         }
 
@@ -211,7 +203,6 @@
         });
 
         let defaultDate = validSaturdays.length > 0 ? validSaturdays[validSaturdays.length - 1] : filteredSaturdays[0];
-
         if (!selectedDateStr || !filteredSaturdays.includes(selectedDateStr)) {
             selectedDateStr = defaultDate;
         }
@@ -228,27 +219,17 @@
             if (isFuture) {
                 btn.className = 'saturday-item-btn disabled';
                 btn.innerHTML = `<span>🔒 ${dStr.replace(/^\d{4}년\s*/, '')} (예정)</span>`;
-                btn.onclick = () => {
-                    alert("아직 다가오지 않은 미래 날짜는 출석을 체크할 수 없습니다!");
-                };
+                btn.onclick = () => alert("아직 다가오지 않은 미래 날짜는 체크할 수 없습니다!");
             } else {
                 btn.className = `saturday-item-btn ${isSelected ? 'active' : ''}`;
                 btn.innerText = dStr.replace(/^\d{4}년\s*/, '');
                 btn.onclick = () => {
-                    document.querySelectorAll('.saturday-item-btn').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
                     selectedDateStr = dStr;
-                    renderCheckinList();
+                    renderSaturdayVerticalList();
                 };
             }
             wrapper.appendChild(btn);
         });
-
-        const selTargetDate = new Date(selectedDateStr.replace(/년|월/g, '-').replace(/일.*/, '').trim());
-        selTargetDate.setHours(0, 0, 0, 0);
-        if (selTargetDate > today && validSaturdays.length > 0) {
-            selectedDateStr = validSaturdays[validSaturdays.length - 1];
-        }
 
         renderCheckinList();
     }
@@ -269,14 +250,8 @@
     }
 
     function loadData() {
-        document.getElementById('member-list').innerHTML = "<div class='loading'>데이터 불러오는 중...</div>";
-
-        const cacheBuster = new Date().getTime() + "_" + Math.random();
-        fetch(API_URL + "?t=" + cacheBuster, { 
-            method: "GET",
-            cache: "reload", 
-            redirect: "follow" 
-        })
+        const cacheBuster = new Date().getTime();
+        fetch(API_URL + "?t=" + cacheBuster, { method: "GET", cache: "reload" })
         .then(res => res.json())
         .then(data => {
             globalMembers = data.members || [];
@@ -286,10 +261,7 @@
                 renderStats();
             }
         })
-        .catch(err => {
-            console.error(err);
-            document.getElementById('member-list').innerHTML = "<div style='color:#e74c3c; font-weight:bold; text-align:center; padding:20px;'>데이터 연결 오류. 새로고침을 해 주세요.</div>";
-        });
+        .catch(err => console.error(err));
     }
 
     function renderCheckinList() {
@@ -336,14 +308,42 @@
                     <div>${badgeHtml}</div>
                 </div>
                 <div class="btn-group">
-                    <button class="${isChecked && score === 10 ? 'selected-10' : ''}" onclick="checkIn('${name}', 10)">출석(+10)</button>
-                    <button class="${isChecked && score === 5 ? 'selected-5' : ''}" onclick="checkIn('${name}', 5)">지각(+5)</button>
-                    <button class="${isChecked && score === 99 ? 'selected-comp' : ''}" onclick="checkIn('${name}', 99)">대회(+10)</button>
-                    ${isChecked ? `<button class="btn-cancel" onclick="cancelCheckIn('${name}')">취소</button>` : ''}
+                    <button class="${isChecked && score === 10 ? 'selected-10' : ''}" onclick="handleCheckIn('${name}', 10)">출석(+10)</button>
+                    <button class="${isChecked && score === 5 ? 'selected-5' : ''}" onclick="handleCheckIn('${name}', 5)">지각(+5)</button>
+                    <button class="${isChecked && score === 99 ? 'selected-comp' : ''}" onclick="handleCheckIn('${name}', 99)">대회(+10)</button>
+                    ${isChecked ? `<button class="btn-cancel" onclick="handleCheckIn('${name}', 0)">취소</button>` : ''}
                 </div>
             `;
             listDiv.appendChild(card);
         });
+    }
+
+    // 💡 [핵심 메카니즘] 누르는 순간 로컬 메모리에 먼저 반영하여 새로고침/재실행 시 즉시 유지되도록 고정
+    function handleCheckIn(name, score) {
+        const targetYMD = normalizeYMD(selectedDateStr);
+        
+        // 이미 체크된 상태에서 같은 버튼을 또 누르면 작동 안 함 (중복 방지)
+        let existing = globalLogs.find(l => l.name === name && normalizeYMD(l.date) === targetYMD && Number(l.score) > 0);
+        if (score > 0 && existing) {
+            alert(`[${name}]님은 이미 출석 체크가 완료되었습니다. 변경하려면 [취소] 후 다시 선택해 주세요.`);
+            return;
+        }
+
+        // 로컬 데이터 배열 즉시 갱신 (서버 대기 없이 화면 고정)
+        globalLogs = globalLogs.filter(l => !(l.name === name && normalizeYMD(l.date) === targetYMD));
+        if (score > 0) {
+            let mMatch = selectedDateStr.match(/(\d+)월/);
+            globalLogs.push({ date: selectedDateStr, name, month: mMatch ? parseInt(mMatch[1], 10) : 0, score });
+        }
+
+        // 즉시 화면 다시 그려서 체크된 상태(색상 및 취소 버튼)로 전환
+        renderCheckinList();
+
+        // 서버(구글 시트)에는 백그라운드로 조용히 전송하여 동기화
+        const saveUrl = `${API_URL}?name=${encodeURIComponent(name)}&score=${score}&date=${encodeURIComponent(selectedDateStr)}&t=${new Date().getTime()}`;
+        fetch(saveUrl, { method: 'GET', cache: 'no-cache' })
+            .then(res => res.json())
+            .catch(err => console.error("백그라운드 저장 오류:", err));
     }
 
     function renderStats() {
@@ -367,16 +367,9 @@
             const m = Number(log.month);
             if (score <= 0 || !userMonthlyData[name] || m < 1 || m > 12) return;
 
-            if (score === 10) {
-                userMonthlyData[name].score[m] += 10;
-                userMonthlyData[name].att[m] += 1;
-            } else if (score === 5) {
-                userMonthlyData[name].score[m] += 5;
-                userMonthlyData[name].tardy[m] += 1;
-            } else if (score === 99) {
-                userMonthlyData[name].score[m] += 10;
-                userMonthlyData[name].comp[m] += 1;
-            }
+            if (score === 10) { userMonthlyData[name].score[m] += 10; userMonthlyData[name].att[m] += 1; }
+            else if (score === 5) { userMonthlyData[name].score[m] += 5; userMonthlyData[name].tardy[m] += 1; }
+            else if (score === 99) { userMonthlyData[name].score[m] += 10; userMonthlyData[name].comp[m] += 1; }
         });
 
         let displayList = [];
@@ -414,11 +407,9 @@
         let currentRank = 1;
         displayList.forEach((item, index) => {
             if (index > 0 && item.score < displayList[index - 1].score) currentRank = index + 1;
-
             const card = document.createElement('div');
             card.className = 'rank-card';
             let rankBadge = (currentRank === 1 ? '🥇 1위' : (currentRank === 2 ? '🥈 2위' : (currentRank === 3 ? '🥉 3위' : `${currentRank}위`)));
-
             card.innerHTML = `
                 <div class="rank-number">${rankBadge}</div>
                 <div class="rank-name">${item.name}</div>
@@ -429,53 +420,6 @@
         });
     }
 
-    function checkIn(name, score) {
-        const targetYMD = normalizeYMD(selectedDateStr);
-        let already = globalLogs.find(l => l.name === name && normalizeYMD(l.date) === targetYMD && Number(l.score) > 0);
-        
-        if (already) {
-            alert(`[${name}]님은 이미 해당 날짜에 출석 체크가 완료되었습니다. 변경하려면 먼저 [취소] 후 다시 선택해 주세요.`);
-            renderCheckinList();
-            return;
-        }
-
-        let label = (score === 5) ? '지각(+5점)' : (score === 99 ? '대회(+10점)' : '출석(+10점)');
-        if(!confirm(`[${selectedDateStr.replace(/^\d{4}년\s*/, '')}] [${name}]님을 [${label}]으로 기록하시겠습니까?`)) return;
-
-        globalLogs = globalLogs.filter(l => !(l.name === name && normalizeYMD(l.date) === targetYMD));
-        let mMatch = selectedDateStr.match(/(\d+)월/);
-        globalLogs.push({ date: selectedDateStr, name, month: mMatch ? parseInt(mMatch[1], 10) : 0, score });
-
-        renderCheckinList();
-
-        const saveUrl = `${API_URL}?action=save&name=${encodeURIComponent(name)}&score=${score}&date=${encodeURIComponent(selectedDateStr)}&t=${new Date().getTime()}`;
-        fetch(saveUrl, { method: 'GET', redirect: 'follow' })
-            .then(res => res.json())
-            .then(data => {
-                loadData();
-            })
-            .catch(err => console.error(err));
-    }
-
-    function cancelCheckIn(name) {
-        if(!confirm(`[${selectedDateStr.replace(/^\d{4}년\s*/, '')}] [${name}]님의 출석을 취소하시겠습니까?`)) return;
-
-        const targetYMD = normalizeYMD(selectedDateStr);
-        globalLogs = globalLogs.filter(l => !(l.name === name && normalizeYMD(l.date) === targetYMD));
-        
-        renderCheckinList();
-
-        const saveUrl = `${API_URL}?action=save&name=${encodeURIComponent(name)}&score=0&date=${encodeURIComponent(selectedDateStr)}&t=${new Date().getTime()}`;
-        fetch(saveUrl, { method: 'GET', redirect: 'follow' })
-            .then(res => res.json())
-            .then(data => {
-                loadData();
-            })
-            .catch(err => console.error(err));
-    }
-
-    initCheckinMonthButtons();
-    initStatsMonthButtons();
     loadData();
 </script>
 
