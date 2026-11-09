@@ -5,16 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>토달 출석부</title>
     
-    <!-- 💡 [핵심] 스마트폰 홈 화면 추가 시 앱처럼 보이게 해주는 예쁜 아이콘 설정 -->
-    <link rel="apple-touch-icon" href="icon.png">        <!-- 아이폰용 (가장 중요) -->
-    <link rel="icon" sizes="192x192" href="icon.png">  <!-- 안드로이드(갤럭시)용 -->
-    <link rel="icon" href="icon.png" type="image/png"> <!-- 브라우저 탭용 파비콘 -->
+    <link rel="apple-touch-icon" href="icon.png">
+    <link rel="icon" sizes="192x192" href="icon.png">
+    <link rel="icon" href="icon.png" type="image/png">
 
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="토달출석부">
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#2c3e50"> <!-- 상단바 색상 -->
+    <meta name="theme-color" content="#2c3e50">
 
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f0f2f5; margin: 0; padding: 10px; color: #333; -webkit-tap-highlight-color: transparent; }
@@ -89,7 +88,7 @@
             <div class="saturday-vertical-group" id="saturday-vertical-wrapper"></div>
         </div>
 
-        <div id="member-list" class="loading">회원 명단 불러오는 중...</div>
+        <div id="member-list" class="loading">데이터 불러오는 중...</div>
     </div>
 
     <!-- 누적현황 탭 -->
@@ -100,8 +99,7 @@
 </div>
 
 <script>
-    // 💡 여기에 구글 웹 앱 URL을 넣어주세요!
-    const API_URL = "https://script.google.com/macros/s/AKfycbxFdQsJvsZAaZZWNX427AD-O0jC7Xiyqe8SHUXcpgO4bBF6T4G1cs2mfkFKnqZPP5Bc-w/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbyPD-g3-AhImPFdQk_wBokuFr4iT8uWJN4U44xl6RqBbfkFBgGWe7Vz-csyv3GEbbE-4A/exec";
 
     let globalMembers = [];
     let globalLogs = [];
@@ -120,7 +118,6 @@
         return `${years}년 ${months}월 ${days}일 ${weekDays[dateObj.getDay()]}`;
     }
 
-    // 날짜 문자열을 일치시키기 위해 공백 및 형식 정규화 함수
     function normalizeDateStr(str) {
         if (!str) return "";
         return String(str).replace(/\s+/g, "").trim();
@@ -263,32 +260,45 @@
         }
     }
 
+    // 💡 [핵심 수정] 서버에서 데이터를 완벽히 가져온 뒤에만 화면을 그리도록 순서 보장
     function loadData() {
-        fetch(API_URL + "?t=" + new Date().getTime(), { redirect: "follow" })
-            .then(res => res.json())
-            .then(data => {
-                globalMembers = data.members || [];
-                globalLogs = data.logs || []; 
-                renderSaturdayVerticalList();
-                if (!document.getElementById('tab-stats').classList.contains('hidden')) {
-                    renderStats();
-                }
-            })
-            .catch(err => {
-                console.error(err);
-                document.getElementById('member-list').innerHTML = "<div style='color:#e74c3c; font-weight:bold;'>데이터 연결 대기 중... 웹 앱 URL을 확인해 주세요.</div>";
-            });
+        document.getElementById('member-list').innerHTML = "<div class='loading'>데이터 불러오는 중...</div>";
+
+        const cacheBuster = new Date().getTime() + "_" + Math.random();
+        fetch(API_URL + "?t=" + cacheBuster, { 
+            method: "GET",
+            cache: "no-store", 
+            redirect: "follow" 
+        })
+        .then(res => res.json())
+        .then(data => {
+            globalMembers = data.members || [];
+            globalLogs = data.logs || []; 
+            
+            // 데이터가 로드된 직후 리스트 및 날짜 버튼 렌더링 실행
+            renderSaturdayVerticalList();
+            if (!document.getElementById('tab-stats').classList.contains('hidden')) {
+                renderStats();
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            document.getElementById('member-list').innerHTML = "<div style='color:#e74c3c; font-weight:bold; text-align:center; padding:20px;'>데이터 연결 오류. 새로고침을 해 주세요.</div>";
+        });
     }
 
     function renderCheckinList() {
         const listDiv = document.getElementById('member-list');
         listDiv.innerHTML = '';
-        if(globalMembers.length === 0) return;
+        if(globalMembers.length === 0) {
+            listDiv.innerHTML = "<div style='text-align:center; color:#888; padding:20px;'>등록된 회원이 없습니다.</div>";
+            return;
+        }
 
         const dayAttendance = {};
         const targetNormalized = normalizeDateStr(selectedDateStr);
 
-        // 💡 [핵심 복원 보완] 공백이나 형식이 미세하게 달라도 날짜가 정확히 일치하도록 정규화 비교
+        // 서버에서 받아온 globalLogs에서 오늘 날짜와 일치하는 기록 추출
         globalLogs.forEach(log => {
             if (log.date && normalizeDateStr(log.date) === targetNormalized && Number(log.score) > 0) {
                 dayAttendance[String(log.name).trim()] = Number(log.score);
@@ -428,7 +438,6 @@
         let label = (score === 5) ? '지각(+5점)' : (score === 99 ? '대회(+10점)' : '출석(+10점)');
         if(!confirm(`[${selectedDateStr.replace(/^\d{4}년\s*/, '')}] [${name}]님을 [${label}]으로 기록하시겠습니까?`)) return;
 
-        // 기존 로컬 로그에서 해당 날짜+이름 항목 제거 후 새 기록 추가
         globalLogs = globalLogs.filter(l => !(l.name === name && normalizeDateStr(l.date) === targetNormalized));
         let mMatch = selectedDateStr.match(/(\d+)월/);
         globalLogs.push({ date: selectedDateStr, name, month: mMatch ? parseInt(mMatch[1], 10) : 0, score });
@@ -457,6 +466,8 @@
 
     initCheckinMonthButtons();
     initStatsMonthButtons();
+    
+    // 페이지 로드 시 가장 먼저 서버 데이터를 불러오도록 실행
     loadData();
 </script>
 
