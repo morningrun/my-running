@@ -99,7 +99,7 @@
 </div>
 
 <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycby-xJEI0cYgX5TiSzpYAd4PGnB-onsGA6PzFow44BzRiAdT8zJB9SiiJwHzeRJTa4uVMQ/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbybcW4ucyWYKILgKj7wBj9ZxadogWRZ5lwO6xmdD20HlrhmjFLlEiOh_UQTi1m9W2rj/exec";
 
     let globalMembers = [];
     let globalLogs = [];
@@ -119,6 +119,7 @@
         return `${years}년 ${months}월 ${days}일 ${weekDays[dateObj.getDay()]}`;
     }
 
+    // 💡 프론트엔드에서도 날짜를 무조건 "YYYY-M-D" 숫자 형태로 통일하여 비교
     function strictYMD(str) {
         if (!str) return "";
         const match = String(str).match(/(\d{4}).*?(\d+).*?(\d+)/);
@@ -400,7 +401,6 @@
             const result = await response.json();
             if (!result.success) throw new Error(result.message || '서버 저장 실패');
 
-            // 💡 서버가 저장 후 최신 데이터를 즉시 반환하므로 딜레이 없이 그대로 반영
             globalMembers = Array.isArray(result.members) ? result.members : globalMembers;
             globalLogs = Array.isArray(result.logs) ? result.logs : globalLogs;
             renderSaturdayVerticalList();
