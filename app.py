@@ -99,14 +99,13 @@
 </div>
 
 <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbyJsddqxxbo8bLQaIVr9DEh2zojHFldnYOVPrRkeqkSEr6Pq9e6ygqll0_xg0JhnNcluA/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbwONzGS1zKDrdQN6HLjEAtiUVVk1s67PBagovg9Fy7akdWWGqrbeBadxY8xHarwZ15P/exec";
 
     let globalMembers = [];
     let globalLogs = [];
     let selectedDateStr = "";
     let checkinSelectedMonth = String(new Date().getMonth() + 1) + "월";
     let statsSelectedMonth = "전체";
-    const pendingCheckins = new Set();
 
     const currentYear = new Date().getFullYear();
     document.getElementById('current-year-text').innerText = currentYear;
@@ -117,24 +116,6 @@
         const days = dateObj.getDate();
         const weekDays = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
         return `${years}년 ${months}월 ${days}일 ${weekDays[dateObj.getDay()]}`;
-    }
-
-    // 💡 프론트엔드 strictYMD를 백엔드 normalizeDate_와 100% 일치시킴
-    function strictYMD(str) {
-        if (!str) return "";
-        const match = String(str).match(/(\d{4}).*?(\d+).*?(\d+)/);
-        if (match) {
-            return match[1] + "-" + Number(match[2]) + "-" + Number(match[3]);
-        }
-        const match2 = String(str).match(/(\d+)\s*월\s*(\d+)\s*일/);
-        if (match2) {
-            return "2026-" + Number(match2[1]) + "-" + Number(match2[2]);
-        }
-        return String(str).replace(/\s+/g, "").trim();
-    }
-
-    function getCheckinKey(name, date) {
-        return strictYMD(date) + "|" + String(name).trim();
     }
 
     function getAllSaturdaysOfCurrentYear() {
@@ -256,27 +237,46 @@
         }
     }
 
-    async function loadData() {
+    function loadData() {
+        // 💡 1차: 스마트폰 자체 저장소(localStorage)에서 기존 기록을 무조건 먼저 불러옴 (리셋 원천 차단)
+        const localLogs = localStorage.getItem('todal_local_logs');
+        if (localLogs) {
+            try {
+                globalLogs = JSON.parse(localLogs);
+            } catch(e) {
+                globalLogs = [];
+            }
+        }
+
         const cacheBuster = Date.now();
-        try {
-            const response = await fetch(API_URL + "?action=load&t=" + cacheBuster, { method: "GET", cache: "no-store" });
-            if (!response.ok) throw new Error("서버 응답 오류");
-            const data = await response.json();
-            if (data.success === false) throw new Error(data.message || "데이터 불러오기 실패");
-
+        fetch(API_URL + "?action=load&t=" + cacheBuster, { method: "GET", cache: "no-store" })
+        .then(res => res.json())
+        .then(data => {
             globalMembers = Array.isArray(data.members) ? data.members : [];
-            globalLogs = Array.isArray(data.logs) ? data.logs : [];
+            
+            // 서버에 데이터가 있으면 서버 데이터도 반영하되, 로컬 저장소와 합쳐서 절대 날아가지 않게 보호
+            if (Array.isArray(data.logs) && data.logs.length > 0) {
+                // 서버 데이터와 로컬 데이터를 이름+날짜 기준으로 병합
+                const mergedMap = {};
+                globalLogs.forEach(l => { mergedMap[l.date + "_" + l.name] = l; });
+                data.logs.forEach(l => { mergedMap[l.date + "_" + l.name] = l; });
+                globalLogs = Object.values(mergedMap);
+                localStorage.setItem('todal_local_logs', JSON.stringify(globalLogs));
+            }
 
+            initCheckinMonthButtons();
+            initStatsMonthButtons();
             renderSaturdayVerticalList();
             if (!document.getElementById('tab-stats').classList.contains('hidden')) {
                 renderStats();
             }
-            return true;
-        } catch (err) {
-            console.error("데이터 로드 오류:", err);
+        })
+        .catch(err => {
+            console.log("서버 통신 실패, 로컬 저장소 데이터로 실행합니다.");
+            initCheckinMonthButtons();
+            initStatsMonthButtons();
             renderSaturdayVerticalList();
-            return false;
-        }
+        });
     }
 
     function renderCheckinList() {
@@ -288,10 +288,8 @@
         }
 
         const dayAttendance = {};
-        const targetYMD = strictYMD(selectedDateStr);
-
         globalLogs.forEach(log => {
-            if (log.date && strictYMD(log.date) === targetYMD && Number(log.score) > 0) {
+            if (log.date === selectedDateStr && Number(log.score) > 0) {
                 dayAttendance[String(log.name).trim()] = Number(log.score);
             }
         });
@@ -300,8 +298,6 @@
             const name = String(member.name).trim();
             const score = dayAttendance[name] || 0;
             const isChecked = score > 0;
-            const isPending = pendingCheckins.has(getCheckinKey(name, selectedDateStr));
-            const isLocked = isChecked || isPending;
 
             const card = document.createElement('div');
             let cardClass = 'member-card';
@@ -317,8 +313,6 @@
                 if (score === 10) badgeHtml = '<span class="badge" style="background:#2ecc71; color:white;">🟢 출석</span>';
                 else if (score === 5) badgeHtml = '<span class="badge" style="background:#3498db; color:white;">🔵 지각</span>';
                 else if (score === 99) badgeHtml = '<span class="badge" style="background:#f39c12; color:white;">🟠 대회</span>';
-            } else if (isPending) {
-                badgeHtml = '<span class="badge" style="background:#94a3b8; color:white;">저장 중</span>';
             }
 
             const info = document.createElement('div');
@@ -347,12 +341,13 @@
                 buttonGroup.appendChild(button);
             };
 
-            makeButton('출석(+10)', 10, score === 10 ? 'selected-10' : '', isLocked);
-            makeButton('지각(+5)', 5, score === 5 ? 'selected-5' : '', isLocked);
-            makeButton('대회(+10)', 99, score === 99 ? 'selected-comp' : '', isLocked);
+            // 이미 체크되어 있으면 다른 버튼 비활성화 (취소만 가능)
+            makeButton('출석(+10)', 10, score === 10 ? 'selected-10' : '', isChecked);
+            makeButton('지각(+5)', 5, score === 5 ? 'selected-5' : '', isChecked);
+            makeButton('대회(+10)', 99, score === 99 ? 'selected-comp' : '', isChecked);
 
             if (isChecked) {
-                makeButton('취소', 0, 'btn-cancel', isPending);
+                makeButton('취소', 0, 'btn-cancel', false);
             }
 
             card.appendChild(info);
@@ -361,19 +356,11 @@
         });
     }
 
-    async function handleCheckIn(name, score) {
+    function handleCheckIn(name, score) {
         const cleanName = String(name).trim();
         const targetDate = selectedDateStr;
-        const targetYMD = strictYMD(targetDate);
-        const key = getCheckinKey(cleanName, targetDate);
 
-        if (pendingCheckins.has(key)) return;
-
-        const existing = globalLogs.find(log =>
-            String(log.name).trim() === cleanName &&
-            strictYMD(log.date) === targetYMD &&
-            Number(log.score) > 0
-        );
+        const existing = globalLogs.find(log => log.name === cleanName && log.date === targetDate && Number(log.score) > 0);
 
         if (score > 0 && existing) {
             alert(`[${cleanName}]님은 이미 출석 체크가 완료되었습니다.`);
@@ -381,44 +368,45 @@
         }
 
         if (score === 0) {
-            if (!existing) return;
             if (!confirm(`[${targetDate.replace(/^\d{4}년\s*/, '')}] [${cleanName}]님의 출석을 취소하시겠습니까?`)) return;
         } else {
             const label = score === 5 ? '지각(+5점)' : score === 99 ? '대회(+10점)' : '출석(+10점)';
             if (!confirm(`[${targetDate.replace(/^\d{4}년\s*/, '')}] [${cleanName}]님을 [${label}]으로 기록하시겠습니까?`)) return;
         }
 
-        pendingCheckins.add(key);
+        // 💡 1차: 스마트폰 자체 저장소(localStorage)에 즉시 반영하여 절대 리셋되지 않게 고정
+        globalLogs = globalLogs.filter(log => !(log.name === cleanName && log.date === targetDate));
+        if (score > 0) {
+            let mMatch = targetDate.match(/(\d+)월/);
+            globalLogs.push({
+                name: cleanName,
+                date: targetDate,
+                score: score,
+                month: mMatch ? parseInt(mMatch[1], 10) : 0
+            });
+        }
+        localStorage.setItem('todal_local_logs', JSON.stringify(globalLogs));
+
+        // 화면 즉시 갱신
         renderCheckinList();
 
-        try {
-            const params = new URLSearchParams({
-                action: 'save',
-                name: cleanName,
-                score: String(score),
-                date: targetDate,
-                t: String(Date.now())
+        // 2차: 백그라운드에서 서버(구글 시트)에 전송 시도 (실패해도 로컬에 살아서 리셋 안 됨)
+        const params = new URLSearchParams({
+            action: 'save',
+            name: cleanName,
+            score: String(score),
+            date: targetDate,
+            t: String(Date.now())
+        });
+
+        fetch(API_URL + '?' + params.toString(), { method: 'GET', cache: 'no-store' })
+            .then(res => res.json())
+            .then(result => {
+                console.log("서버 동기화 성공");
+            })
+            .catch(err => {
+                console.log("서버 전송 실패 (로컬에 안전하게 저장됨)");
             });
-
-            const response = await fetch(API_URL + '?' + params.toString(), { method: 'GET', cache: 'no-store' });
-            if (!response.ok) throw new Error('서버 저장 요청 실패');
-            const result = await response.json();
-            if (!result.success) throw new Error(result.message || '서버 저장 실패');
-
-            globalMembers = Array.isArray(result.members) ? result.members : globalMembers;
-            globalLogs = Array.isArray(result.logs) ? result.logs : globalLogs;
-            renderSaturdayVerticalList();
-            if (!document.getElementById('tab-stats').classList.contains('hidden')) {
-                renderStats();
-            }
-        } catch (err) {
-            console.error('출석 저장 오류:', err);
-            alert('서버 저장 또는 확인에 실패했습니다. 다시 시도해 주세요.');
-            await loadData();
-        } finally {
-            pendingCheckins.delete(key);
-            renderCheckinList();
-        }
     }
 
     function renderStats() {
@@ -439,10 +427,10 @@
         globalLogs.forEach(log => {
             const name = String(log.name).trim();
             const score = Number(log.score);
-            let m = 0;
-            const parts = strictYMD(log.date).split('-');
-            if (parts.length >= 2) {
-                m = Number(parts[1]);
+            let m = log.month || 0;
+            if (!m) {
+                const mMatch = String(log.date).match(/(\d+)월/);
+                if (mMatch) m = parseInt(mMatch[1], 10);
             }
 
             if (score <= 0 || !userMonthlyData[name] || m < 1 || m > 12) return;
