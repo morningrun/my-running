@@ -99,7 +99,7 @@
 </div>
 
 <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbyPD-g3-AhImPFdQk_wBokuFr4iT8uWJN4U44xl6RqBbfkFBgGWe7Vz-csyv3GEbbE-4A/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbzLvp7XS-NsFPfi8lLSVhsM4KsYiSQfE-23cKTb4N8AfOTfrKmH9b1Vgx73NTAZj6rEeA/exec";
 
     let globalMembers = [];
     let globalLogs = [];
@@ -260,22 +260,19 @@
         }
     }
 
-    // 💡 [핵심 수정] 서버에서 데이터를 완벽히 가져온 뒤에만 화면을 그리도록 순서 보장
     function loadData() {
         document.getElementById('member-list').innerHTML = "<div class='loading'>데이터 불러오는 중...</div>";
 
         const cacheBuster = new Date().getTime() + "_" + Math.random();
         fetch(API_URL + "?t=" + cacheBuster, { 
             method: "GET",
-            cache: "no-store", 
+            cache: "reload", 
             redirect: "follow" 
         })
         .then(res => res.json())
         .then(data => {
             globalMembers = data.members || [];
             globalLogs = data.logs || []; 
-            
-            // 데이터가 로드된 직후 리스트 및 날짜 버튼 렌더링 실행
             renderSaturdayVerticalList();
             if (!document.getElementById('tab-stats').classList.contains('hidden')) {
                 renderStats();
@@ -298,7 +295,6 @@
         const dayAttendance = {};
         const targetNormalized = normalizeDateStr(selectedDateStr);
 
-        // 서버에서 받아온 globalLogs에서 오늘 날짜와 일치하는 기록 추출
         globalLogs.forEach(log => {
             if (log.date && normalizeDateStr(log.date) === targetNormalized && Number(log.score) > 0) {
                 dayAttendance[String(log.name).trim()] = Number(log.score);
@@ -466,8 +462,6 @@
 
     initCheckinMonthButtons();
     initStatsMonthButtons();
-    
-    // 페이지 로드 시 가장 먼저 서버 데이터를 불러오도록 실행
     loadData();
 </script>
 
