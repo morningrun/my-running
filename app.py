@@ -99,7 +99,8 @@
 </div>
 
 <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbycTsvIUA2L7Vlq43xtTu6qHZFenVh3FQsescd6P_igcvnq2W3l1dfwuWmGHbaO3maiWQ/exec";
+    // 💡 형님의 웹 앱 URL이 정확히 들어가 있는지 확인해주세요!
+    const API_URL = "https://script.google.com/macros/s/AKfycbzc_y28hcPshwsGwLEsGVqD6UHknRoM_GvPoUmAvoGuw8Pu0oJAmL4ZNLZvql5JJErjaA/exec";
 
     let globalMembers = [];
     let globalLogs = [];
@@ -118,7 +119,6 @@
         return `${years}년 ${months}월 ${days}일 ${weekDays[dateObj.getDay()]}`;
     }
 
-    // 💡 프론트엔드 표준화 함수 (앞자리 0을 맞춰서 날짜 비교 오류 원천 차단)
     function normalizeYMD(str) {
         if (!str) return "";
         const match = String(str).match(/(\d{4}).*?(\d+).*?(\d+)/);
