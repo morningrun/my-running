@@ -261,7 +261,10 @@
                 renderStats();
             }
         })
-        .catch(err => console.error(err));
+        .catch(err => {
+            console.error("데이터 로드 오류:", err);
+            document.getElementById('member-list').innerHTML = "<div style='color:#e74c3c; text-align:center; padding:20px;'>데이터 연결 오류. 새로고침 해주세요.</div>";
+        });
     }
 
     function renderCheckinList() {
@@ -275,6 +278,7 @@
         const dayAttendance = {};
         const targetYMD = normalizeYMD(selectedDateStr);
 
+        // 💡 서버에서 불러온 로그 중 현재 선택된 날짜와 일치하는 기록을 매핑
         globalLogs.forEach(log => {
             if (log.date && normalizeYMD(log.date) === targetYMD && Number(log.score) > 0) {
                 dayAttendance[String(log.name).trim()] = Number(log.score);
@@ -302,15 +306,16 @@
                 else if (score === 99) badgeHtml = '<span class="badge" style="background:#f39c12; color:white;">🟠 대회</span>';
             }
 
+            // 💡 이미 출석된 회원이면 추가 클릭 버튼을 비활성화(disabled) 시키거나 취소 버튼만 노출하여 추가 점수 원천 차단
             card.innerHTML = `
                 <div class="member-info">
                     <div class="member-name">${name}</div>
                     <div>${badgeHtml}</div>
                 </div>
                 <div class="btn-group">
-                    <button class="${isChecked && score === 10 ? 'selected-10' : ''}" onclick="handleCheckIn('${name}', 10)">출석(+10)</button>
-                    <button class="${isChecked && score === 5 ? 'selected-5' : ''}" onclick="handleCheckIn('${name}', 5)">지각(+5)</button>
-                    <button class="${isChecked && score === 99 ? 'selected-comp' : ''}" onclick="handleCheckIn('${name}', 99)">대회(+10)</button>
+                    <button class="${isChecked && score === 10 ? 'selected-10' : ''}" ${isChecked ? 'disabled style="opacity:0.6; cursor:not-allowed;"' : ''} onclick="handleCheckIn('${name}', 10)">출석(+10)</button>
+                    <button class="${isChecked && score === 5 ? 'selected-5' : ''}" ${isChecked ? 'disabled style="opacity:0.6; cursor:not-allowed;"' : ''} onclick="handleCheckIn('${name}', 5)">지각(+5)</button>
+                    <button class="${isChecked && score === 99 ? 'selected-comp' : ''}" ${isChecked ? 'disabled style="opacity:0.6; cursor:not-allowed;"' : ''} onclick="handleCheckIn('${name}', 99)">대회(+10)</button>
                     ${isChecked ? `<button class="btn-cancel" onclick="handleCheckIn('${name}', 0)">취소</button>` : ''}
                 </div>
             `;
@@ -318,32 +323,40 @@
         });
     }
 
-    // 💡 [핵심 메카니즘] 누르는 순간 로컬 메모리에 먼저 반영하여 새로고침/재실행 시 즉시 유지되도록 고정
     function handleCheckIn(name, score) {
         const targetYMD = normalizeYMD(selectedDateStr);
         
-        // 이미 체크된 상태에서 같은 버튼을 또 누르면 작동 안 함 (중복 방지)
+        // 💡 이미 체크된 상태에서 취소(0)가 아닌 다른 버튼을 누를 경우 원천 차단
         let existing = globalLogs.find(l => l.name === name && normalizeYMD(l.date) === targetYMD && Number(l.score) > 0);
         if (score > 0 && existing) {
-            alert(`[${name}]님은 이미 출석 체크가 완료되었습니다. 변경하려면 [취소] 후 다시 선택해 주세요.`);
+            alert(`[${name}]님은 이미 출석 체크가 완료되었습니다. 변경하시려면 먼저 [취소] 후 선택해 주세요.`);
             return;
         }
 
-        // 로컬 데이터 배열 즉시 갱신 (서버 대기 없이 화면 고정)
+        if (score === 0) {
+            if(!confirm(`[${selectedDateStr.replace(/^\d{4}년\s*/, '')}] [${name}]님의 출석을 취소하시겠습니까?`)) return;
+        } else {
+            let label = (score === 5) ? '지각(+5점)' : (score === 99 ? '대회(+10점)' : '출석(+10점)');
+            if(!confirm(`[${selectedDateStr.replace(/^\d{4}년\s*/, '')}] [${name}]님을 [${label}]으로 기록하시겠습니까?`)) return;
+        }
+
+        // 로컬 배열 즉시 반영 후 화면 갱신
         globalLogs = globalLogs.filter(l => !(l.name === name && normalizeYMD(l.date) === targetYMD));
         if (score > 0) {
             let mMatch = selectedDateStr.match(/(\d+)월/);
             globalLogs.push({ date: selectedDateStr, name, month: mMatch ? parseInt(mMatch[1], 10) : 0, score });
         }
 
-        // 즉시 화면 다시 그려서 체크된 상태(색상 및 취소 버튼)로 전환
         renderCheckinList();
 
-        // 서버(구글 시트)에는 백그라운드로 조용히 전송하여 동기화
+        // 서버 전송
         const saveUrl = `${API_URL}?name=${encodeURIComponent(name)}&score=${score}&date=${encodeURIComponent(selectedDateStr)}&t=${new Date().getTime()}`;
         fetch(saveUrl, { method: 'GET', cache: 'no-cache' })
             .then(res => res.json())
-            .catch(err => console.error("백그라운드 저장 오류:", err));
+            .then(data => {
+                loadData(); // 서버 동기화 후 최신 데이터 재조회
+            })
+            .catch(err => console.error("서버 저장 오류:", err));
     }
 
     function renderStats() {
@@ -422,6 +435,3 @@
 
     loadData();
 </script>
-
-</body>
-</html>
