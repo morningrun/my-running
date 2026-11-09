@@ -238,7 +238,6 @@
     }
 
     function loadData() {
-        // 💡 1차: 스마트폰 자체 저장소(localStorage)에서 기존 기록을 무조건 먼저 불러옴 (리셋 원천 차단)
         const localLogs = localStorage.getItem('todal_local_logs');
         if (localLogs) {
             try {
@@ -248,18 +247,19 @@
             }
         }
 
-        const cacheBuster = Date.now();
-        fetch(API_URL + "?action=load&t=" + cacheBuster, { method: "GET", cache: "no-store" })
+        fetch(API_URL + "?action=load&t=" + Date.now(), { method: "GET", cache: "no-store" })
         .then(res => res.json())
         .then(data => {
             globalMembers = Array.isArray(data.members) ? data.members : [];
             
-            // 서버에 데이터가 있으면 서버 데이터도 반영하되, 로컬 저장소와 합쳐서 절대 날아가지 않게 보호
             if (Array.isArray(data.logs) && data.logs.length > 0) {
-                // 서버 데이터와 로컬 데이터를 이름+날짜 기준으로 병합
                 const mergedMap = {};
-                globalLogs.forEach(l => { mergedMap[l.date + "_" + l.name] = l; });
-                data.logs.forEach(l => { mergedMap[l.date + "_" + l.name] = l; });
+                // 서버 데이터를 우선으로 하되 동일 이름+날짜 중복을 맵 키로 원천 차단
+                data.logs.forEach(l => {
+                    if (Number(l.score) > 0) {
+                        mergedMap[l.date + "|" + l.name] = l;
+                    }
+                });
                 globalLogs = Object.values(mergedMap);
                 localStorage.setItem('todal_local_logs', JSON.stringify(globalLogs));
             }
@@ -328,26 +328,31 @@
             const buttonGroup = document.createElement('div');
             buttonGroup.className = 'btn-group';
 
-            const makeButton = (label, buttonScore, className, disabled) => {
+            const makeButton = (label, buttonScore, className) => {
                 const button = document.createElement('button');
                 button.textContent = label;
                 button.className = className || '';
-                button.disabled = disabled;
-                if (disabled) {
-                    button.style.opacity = '0.6';
+                // 💡 핵심: 이미 출석 체크가 되어 있으면 다른 버튼은 누를 수 없게 막음 (중복 체크 원천 차단)
+                if (isChecked) {
+                    button.disabled = true;
+                    button.style.opacity = '0.4';
                     button.style.cursor = 'not-allowed';
                 }
                 button.addEventListener('click', () => handleCheckIn(name, buttonScore));
                 buttonGroup.appendChild(button);
             };
 
-            // 이미 체크되어 있으면 다른 버튼 비활성화 (취소만 가능)
-            makeButton('출석(+10)', 10, score === 10 ? 'selected-10' : '', isChecked);
-            makeButton('지각(+5)', 5, score === 5 ? 'selected-5' : '', isChecked);
-            makeButton('대회(+10)', 99, score === 99 ? 'selected-comp' : '', isChecked);
+            makeButton('출석(+10)', 10, score === 10 ? 'selected-10' : '');
+            makeButton('지각(+5)', 5, score === 5 ? 'selected-5' : '');
+            makeButton('대회(+10)', 99, score === 99 ? 'selected-comp' : '');
 
+            // 취소 버튼은 체크되어 있을 때만 활성화
             if (isChecked) {
-                makeButton('취소', 0, 'btn-cancel', false);
+                const cancelBtn = document.createElement('button');
+                cancelBtn.textContent = '취소';
+                cancelBtn.className = 'btn-cancel';
+                cancelBtn.addEventListener('click', () => handleCheckIn(name, 0));
+                buttonGroup.appendChild(cancelBtn);
             }
 
             card.appendChild(info);
@@ -360,8 +365,8 @@
         const cleanName = String(name).trim();
         const targetDate = selectedDateStr;
 
+        // 💡 1차 중복 방지: 이미 같은 날짜에 기록이 있는데 또 누르면 막음 (취소 제외)
         const existing = globalLogs.find(log => log.name === cleanName && log.date === targetDate && Number(log.score) > 0);
-
         if (score > 0 && existing) {
             alert(`[${cleanName}]님은 이미 출석 체크가 완료되었습니다.`);
             return;
@@ -374,8 +379,9 @@
             if (!confirm(`[${targetDate.replace(/^\d{4}년\s*/, '')}] [${cleanName}]님을 [${label}]으로 기록하시겠습니까?`)) return;
         }
 
-        // 💡 1차: 스마트폰 자체 저장소(localStorage)에 즉시 반영하여 절대 리셋되지 않게 고정
+        // 💡 2차: 동일 날짜·이름 기존 기록은 배열에서 완전히 제거 후 새로 등록 (절대 중복 쌓임 방지)
         globalLogs = globalLogs.filter(log => !(log.name === cleanName && log.date === targetDate));
+        
         if (score > 0) {
             let mMatch = targetDate.match(/(\d+)월/);
             globalLogs.push({
@@ -385,12 +391,12 @@
                 month: mMatch ? parseInt(mMatch[1], 10) : 0
             });
         }
-        localStorage.setItem('todal_local_logs', JSON.stringify(globalLogs));
 
-        // 화면 즉시 갱신
+        // 로컬 저장소에 고정
+        localStorage.setItem('todal_local_logs', JSON.stringify(globalLogs));
         renderCheckinList();
 
-        // 2차: 백그라운드에서 서버(구글 시트)에 전송 시도 (실패해도 로컬에 살아서 리셋 안 됨)
+        // 3차: 서버(구글 시트)에 전송하여 동기화
         const params = new URLSearchParams({
             action: 'save',
             name: cleanName,
@@ -401,12 +407,7 @@
 
         fetch(API_URL + '?' + params.toString(), { method: 'GET', cache: 'no-store' })
             .then(res => res.json())
-            .then(result => {
-                console.log("서버 동기화 성공");
-            })
-            .catch(err => {
-                console.log("서버 전송 실패 (로컬에 안전하게 저장됨)");
-            });
+            .catch(err => console.log("서버 전송 실패, 로컬에 저장됨"));
     }
 
     function renderStats() {
@@ -424,7 +425,15 @@
             };
         });
 
+        // 💡 통계 계산 시에도 동일한 이름과 날짜의 데이터는 중복 합산되지 않도록 키값으로 필터링
+        const uniqueLogMap = {};
         globalLogs.forEach(log => {
+            if (Number(log.score) > 0) {
+                uniqueLogMap[log.date + "|" + log.name] = log;
+            }
+        });
+
+        Object.values(uniqueLogMap).forEach(log => {
             const name = String(log.name).trim();
             const score = Number(log.score);
             let m = log.month || 0;
