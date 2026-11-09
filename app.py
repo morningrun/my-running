@@ -1,474 +1,199 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>토달 출석부</title>
-    
-    <link rel="apple-touch-icon" href="icon.png">
-    <link rel="icon" sizes="192x192" href="icon.png">
-    <link rel="icon" href="icon.png" type="image/png">
+import base64
+import calendar
+from datetime import datetime
+import os
+from zoneinfo import ZoneInfo
+import plotly.express as px
+import pandas as pd
+import requests
+import streamlit as st
 
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="토달출석부">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#2c3e50">
+def get_base64(path):
+    if os.path.exists(path):
+        with open(path, "rb") as f:
+            return base64.b64encode(f.read()).decode()
+    return None
 
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f0f2f5; margin: 0; padding: 10px; color: #333; -webkit-tap-highlight-color: transparent; }
-        .container { max-width: 600px; margin: 0 auto; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        
-        .main-title-box { text-align: center; margin: 10px 0 5px 0; }
-        .main-title { font-size: 1.8rem; font-weight: 800; color: #1e293b; }
-        .subtitle { text-align: center; font-size: 0.85rem; color: #7f8c8d; margin-bottom: 15px; }
-        
-        .tab-group { display: flex; gap: 6px; margin-bottom: 15px; border-bottom: 2px solid #e2e8f0; padding-bottom: 6px; position: sticky; top: 0; background: white; z-index: 10; }
-        .tab-btn { flex: 1; padding: 10px 4px; font-size: 0.95rem; border: none; background: #f1f5f9; color: #64748b; font-weight: bold; border-radius: 8px; cursor: pointer; transition: all 0.2s; text-align: center; }
-        .tab-btn.active { background: #2c3e50; color: white; }
+mascot_b64 = get_base64("mascot.png")
 
-        .month-filter { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 15px; -webkit-overflow-scrolling: touch; }
-        .month-btn { padding: 8px 14px; font-size: 0.9rem; border: 1px solid #cbd5e1; border-radius: 8px; background: white; cursor: pointer; font-weight: bold; color: #64748b; white-space: nowrap; }
-        .month-btn.active { background: #0284c7; color: white; border-color: #0284c7; }
+st.set_page_config(page_title="이실권 200CREW", page_icon="🏃", layout="centered", initial_sidebar_state="collapsed")
 
-        .saturday-list-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px; margin-bottom: 15px; }
-        .saturday-list-title { font-size: 0.9rem; font-weight: bold; color: #475569; margin-bottom: 8px; }
-        .saturday-vertical-group { display: flex; flex-direction: column; gap: 6px; max-height: 200px; overflow-y: auto; }
-        
-        .saturday-item-btn { padding: 10px 14px; background: white; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; font-weight: bold; color: #334155; cursor: pointer; text-align: left; transition: all 0.2s; display: flex; justify-content: space-between; align-items: center; }
-        .saturday-item-btn.active { background: #2563eb; color: white; border-color: #2563eb; box-shadow: 0 2px 4px rgba(37,99,235,0.2); }
-        .saturday-item-btn.disabled { background: #e2e8f0; color: #94a3b8; border-color: #cbd5e1; cursor: not-allowed; opacity: 0.7; }
+st.markdown("""
+<style>
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
 
-        .member-card { display: flex; flex-direction: column; padding: 12px; margin-bottom: 10px; background: #ffffff; border: 1px solid #e1e8ed; border-radius: 10px; transition: all 0.2s; gap: 8px; }
-        .member-card.checked-10 { background-color: #e8f8f5 !important; border-color: #2ecc71 !important; border-left: 5px solid #2ecc71 !important; }
-        .member-card.checked-5  { background-color: #ebf5fb !important; border-color: #3498db !important; border-left: 5px solid #3498db !important; }
-        .member-card.checked-comp { background-color: #fef5e7 !important; border-color: #f39c12 !important; border-left: 5px solid #f39c12 !important; }
+.crew-title, .crew-subtitle, .hero-card, .sub-card, .custom-table, .stMarkdown p { 
+    font-family: 'Pretendard', sans-serif !important; 
+}
 
-        .member-info { display: flex; justify-content: space-between; align-items: center; }
-        .member-name { font-weight: bold; font-size: 1.05rem; color: #2c3e50; white-space: nowrap; }
-        .badge { font-size: 0.85rem; font-weight: bold; padding: 2px 8px; border-radius: 4px; }
-        
-        .btn-group { display: flex; gap: 4px; width: 100%; }
-        .btn-group button { flex: 1; padding: 10px 2px; font-size: 0.85rem; border: 1px solid #cbd5e1; border-radius: 6px; cursor: pointer; font-weight: bold; background: #ffffff; color: #64748b; text-align: center; transition: all 0.2s; }
-        
-        button.selected-10 { background: #2ecc71 !important; color: white !important; border-color: #2ecc71 !important; }
-        button.selected-5  { background: #3498db !important; color: white !important; border-color: #3498db !important; }
-        button.selected-comp { background: #f39c12 !important; color: white !important; border-color: #f39c12 !important; }
-        button.btn-cancel { background: #fff5f5; color: #e74c3c; border-color: #fab6b6; }
+header { visibility: hidden; }
+.stApp { background-color: #F8FAFC; }
+.block-container { padding: 0.8rem !important; }
+.crew-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; padding: 0 4px; }
+.crew-title { font-size: 1.45rem !important; font-weight: 900; background: linear-gradient(135deg, #0F172A 0%, #0284C7 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 0; }
+.crew-subtitle { font-size: 0.75rem; color: #64748B; font-weight: 600; background: #FFFFFF; border: 1px solid #E2E8F0; padding: 4px 10px; border-radius: 12px; display: flex; align-items: center; gap: 5px; }
+.hero-card { background: linear-gradient(145deg, #1E293B 0%, #0F172A 100%); border-radius: 22px; padding: 20px 22px; color: #FFFFFF; box-shadow: 0 12px 28px -6px rgba(15, 23, 42, 0.25); margin-bottom: 16px; }
+.hero-top-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 12px; margin-bottom: 14px; }
+.hero-goal-title { font-size: 0.95rem; color: #94A3B8; font-weight: 700; }
+.hero-goal-target { font-size: 1.45rem !important; color: #38BDF8; font-weight: 900; }
+.hero-bottom-row { display: flex; align-items: center; justify-content: space-between; }
+.hero-km-highlight { font-size: 2.3rem; font-weight: 900; color: #FFFFFF !important; line-height: 1; }
+.hero-km-label { font-size: 1rem; font-weight: 600; color: #94A3B8 !important; margin-left: 2px; }
+.hero-percent-tag { background: linear-gradient(135deg, #38BDF8 0%, #0284C7 100%); color: #FFFFFF; padding: 6px 14px; border-radius: 20px; font-size: 0.95rem; font-weight: 800; }
+.progress-wrapper { margin-top: 26px; margin-bottom: 12px; padding-top: 18px; }
+.custom-progress-container { position: relative; width: 100%; background-color: #E2E8F0; border-radius: 10px; height: 12px; }
+.custom-progress-bar { height: 100%; background: linear-gradient(90deg, #38BDF8 0%, #0284C7 100%); border-radius: 10px; }
+.custom-progress-badge { position: absolute; top: -22px; transform: translateX(-50%); background: #0284C7; color: #FFFFFF; font-size: 0.68rem; font-weight: 800; padding: 1px 6px; border-radius: 6px; white-space: nowrap; }
+.grid-container { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+.sub-card { background: #FFFFFF; border: 1px solid rgba(226, 232, 240, 0.9); border-radius: 16px; padding: 12px 14px; box-shadow: 0 4px 12px -2px rgba(148, 163, 184, 0.1); }
+.sub-card-header { display: flex; align-items: center; gap: 4px; margin-bottom: 4px; }
+.sub-icon { font-size: 0.9rem; }
+.sub-label { font-size: 0.73rem; color: #64748B; font-weight: 700; }
+.sub-value { font-size: 1.1rem; font-weight: 900; color: #0F172A; }
+.sub-value-large { font-size: 1.45rem !important; font-weight: 900; color: #0F172A; }
+.sub-accent { color: #0284C7; }
+.sub-accent-red { color: #E11D48; }
 
-        .rank-card { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; margin-bottom: 8px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; }
-        .rank-number { font-weight: bold; color: #3b82f6; width: 45px; font-size: 0.95rem; }
-        .rank-name { font-weight: bold; flex: 1; font-size: 1rem; color: #1e293b; }
-        .rank-detail { font-size: 0.78rem; color: #64748b; margin-right: 8px; }
-        .rank-score { font-weight: bold; font-size: 1.1rem; color: #059669; }
+div[data-testid="stExpander"] { background-color: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 16px; margin-bottom: 14px; box-shadow: 0 4px 12px -2px rgba(148, 163, 184, 0.08); overflow: hidden; }
+div[data-testid="stExpander"] summary { font-weight: 900 !important; color: #0F172A !important; font-size: 1.05rem !important; font-family: 'Pretendard', sans-serif !important; }
 
-        .hidden { display: none; }
-        .loading { text-align: center; color: #888; padding: 20px; }
-    </style>
-</head>
-<body>
+.custom-table { width: 100%; border-collapse: collapse; background-color: #FFFFFF; border-radius: 10px; overflow: hidden; border: 1px solid #E2E8F0; font-size: 0.85rem; font-weight: normal !important; }
+.custom-table th { background-color: #F1F5F9; color: #0F172A; font-weight: 700; text-align: center; padding: 7px 6px; border-bottom: 1px solid #E2E8F0; }
+.custom-table td { text-align: center; padding: 7px 6px; color: #334155; border-bottom: 1px solid #F1F5F9; font-weight: normal !important; }
+</style>
+""", unsafe_allow_html=True)
 
-<div class="container">
-    <div class="main-title-box">
-        <div class="main-title">🏃‍♂️ 토달 출석부 👟</div>
+API_KEY = st.secrets["INTERVALS_API_KEY"]
+ATHLETE_ID = st.secrets["INTERVALS_ATHLETE_ID"]
+KST = ZoneInfo("Asia/Seoul")
+now = datetime.now(KST)
+
+@st.cache_data(ttl=300)
+def fetch_data(a_id, key, start):
+    url = f"https://intervals.icu/api/v1/athlete/{a_id}/activities?oldest={start}"
+    res = requests.get(url, auth=("API_KEY", key))
+    return res.json() if res.status_code == 200 else []
+
+activities = fetch_data(ATHLETE_ID, API_KEY, f"{now.year - 2}-01-01")
+records = []
+if activities:
+    for a in activities:
+        if a.get("type") == "Run":
+            d_val = round(a.get("distance", 0) / 1000, 2)
+            date_val = a.get("start_date_local", "")[:10]
+            records.append({"Date": date_val, "Distance": d_val})
+
+df_all = pd.DataFrame(records)
+if not df_all.empty:
+    df_all["Month"] = df_all["Date"].str[:7]
+
+cur_day = now.day
+today_str = now.strftime("%Y-%m-%d")
+date_text = f"{now.year}.{now.month:02d}.{cur_day:02d} ({['월','화','수','목','금','토','일'][now.weekday()]})"
+
+st.markdown(f'<div class="crew-header"><div class="crew-title">이실권 200CREW</div><div class="crew-subtitle"><span>🗓️</span> {date_text}</div></div>', unsafe_allow_html=True)
+
+cur_m_str = now.strftime("%Y-%m")
+df_curr = df_all[df_all["Month"] == cur_m_str] if not df_all.empty else pd.DataFrame()
+
+days_in_m = calendar.monthrange(now.year, now.month)[1]
+rem_days = max(1, days_in_m - cur_day + 1)
+GOAL_KM = 200.0
+
+if not df_curr.empty:
+    tot_km = round(df_curr["Distance"].sum(), 2)
+    run_cnt = len(df_curr)
+    rem_km = max(0.0, round(GOAL_KM - tot_km, 2))
+    today_km = round(df_curr[df_curr["Date"] == today_str]["Distance"].sum(), 2) if not df_curr[df_curr["Date"] == today_str].empty else 0.0
+    pct = round((tot_km / GOAL_KM) * 100, 1)
+    exp_km = round((tot_km / cur_day) * days_in_m, 2)
+else:
+    tot_km, run_cnt, rem_km, today_km, pct, exp_km = 0.0, 0, GOAL_KM, 0.0, 0.0, 0.0
+
+mascot_html = f'<img src="data:image/png;base64,{mascot_b64}" style="width: 56px; height: 56px; border-radius: 50%; border: 2px solid #38BDF8; object-fit: contain; background: #FFFFFF; padding: 3px; display: block; margin-left: auto;">' if mascot_b64 else '<span style="font-size: 1.8rem; display: block; text-align: right;">🏃💨</span>'
+
+st.markdown(f'''
+<div class="hero-card">
+    <div class="hero-top-row">
+        <div><span class="hero-goal-title">🎯 {now.strftime('%y년 %m월')} 목표</span><span class="hero-goal-target" style="margin-left: 8px;">{int(GOAL_KM)} km</span></div>
+        <div style="width: 56px;">{mascot_html}</div>
     </div>
-    <div class="subtitle">매주 토요일 운동모임 출석 & 누적 현황</div>
-    
-    <div class="tab-group">
-        <button class="tab-btn active" id="tab-checkin-btn" onclick="switchTab('checkin')">📅 출석체크</button>
-        <button class="tab-btn" id="tab-stats-btn" onclick="switchTab('stats')">🏆 <span id="current-year-text">2026</span>년 누적현황</button>
-    </div>
-
-    <!-- 출석체크 탭 -->
-    <div id="tab-checkin">
-        <div class="month-filter" id="checkin-month-buttons"></div>
-        
-        <div class="saturday-list-box">
-            <div class="saturday-list-title" id="saturday-list-header">📅 2026년 11월 토달 출석현황</div>
-            <div class="saturday-vertical-group" id="saturday-vertical-wrapper"></div>
-        </div>
-
-        <div id="member-list" class="loading">데이터 불러오는 중...</div>
-    </div>
-
-    <!-- 누적현황 탭 -->
-    <div id="tab-stats" class="hidden">
-        <div class="month-filter" id="stats-month-buttons"></div>
-        <div id="stats-list" class="loading">누적 데이터 계산 중...</div>
+    <div class="hero-bottom-row">
+        <div><span class="hero-km-highlight">{tot_km:.2f}</span><span class="hero-km-label">km 달성</span></div>
+        <div><span class="hero-percent-tag">{pct}%</span></div>
     </div>
 </div>
+''', unsafe_allow_html=True)
 
-<script>
-    const DEFAULT_MEMBERS = [
-        { name: "김경기" },
-        { name: "김미향" },
-        { name: "김은성" },
-        { name: "이실권" },
-        { name: "박지혜" },
-        { name: "김정균" },
-        { name: "은대영" }
-    ];
+bar_w = min(100.0, pct)
+st.markdown(f'<div class="progress-wrapper"><div class="custom-progress-container"><div class="custom-progress-bar" style="width: {bar_w}%;"></div><div class="custom-progress-badge" style="left: {bar_w}%;">{pct}%</div></div></div>', unsafe_allow_html=True)
 
-    let globalMembers = DEFAULT_MEMBERS;
-    let globalLogs = [];
-    let selectedDateStr = localStorage.getItem('todal_selected_date') || "";
-    let checkinSelectedMonth = localStorage.getItem('todal_selected_month') || (String(new Date().getMonth() + 1) + "월");
-    let statsSelectedMonth = "전체";
+msg = f"🔥 목표 달성 완료! 현재 {pct}% 달성 중 (총 {run_cnt}회)" if tot_km >= GOAL_KM else f"🔥 이번 달 총 {run_cnt}회 달리셨어요!"
+st.markdown(f"<p style='font-size:0.85rem; font-weight:800; color:#0F172A; margin-top:4px;'>{msg}</p>", unsafe_allow_html=True)
+st.write("")
 
-    const currentYear = new Date().getFullYear();
-    document.getElementById('current-year-text').innerText = currentYear;
+st.markdown(f'''
+<div class="grid-container">
+    <div class="sub-card"><div class="sub-card-header"><span class="sub-icon">🏅</span><span class="sub-label">오늘 운동 거리</span></div><div class="sub-value sub-value-large sub-accent">{today_km:.2f} km</div></div>
+    <div class="sub-card"><div class="sub-card-header"><span class="sub-icon">🎯</span><span class="sub-label">남은 거리</span></div><div class="sub-value sub-value-large sub-accent-red">{rem_km:.2f} km</div></div>
+    <div class="sub-card"><div class="sub-card-header"><span class="sub-icon">⏳</span><span class="sub-label">남은 기간</span></div><div class="sub-value sub-value-large">{rem_days} 일</div></div>
+    <div class="sub-card"><div class="sub-card-header"><span class="sub-icon">📈</span><span class="sub-label">월 예상 거리</span></div><div class="sub-value sub-value-large">{exp_km:.2f} km</div></div>
+</div>
+''', unsafe_allow_html=True)
+with st.expander(f"📊 {now.month}월 운동 현황", expanded=True):
+    full_dates = pd.DataFrame({"Date": [f"{now.year}-{now.month:02d}-{d:02d}" for d in range(1, days_in_m + 1)]})
+    merged_curr = pd.merge(full_dates, df_curr.groupby("Date", as_index=False)["Distance"].sum(), on="Date", how="left").fillna(0) if not df_curr.empty else full_dates.assign(Distance=0.0)
+    merged_curr["Date_Label"] = [str(int(d.split("-")[2])) for d in merged_curr["Date"]]
+    
+    fig_c = px.bar(merged_curr, x="Date_Label", y="Distance")
+    fig_c.update_traces(marker_color="#0284C7", cliponaxis=False, hoverinfo="x+y")
+    tick_v = [str(d) for d in range(1, days_in_m + 1) if (d - 1) % 3 == 0 or d == days_in_m]
+    fig_c.update_layout(margin=dict(l=0, r=0, t=10, b=0), height=140, xaxis_title=None, yaxis_title=None, plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", xaxis=dict(fixedrange=True, showgrid=False, tickmode="array", tickvals=tick_v, ticktext=tick_v, tickfont=dict(size=10, color="#64748B")), yaxis=dict(fixedrange=True, showgrid=True, gridcolor="#E2E8F0", tickfont=dict(size=10, color="#64748B"), rangemode="tozero"), font=dict(size=10, color="#475569"))
+    st.plotly_chart(fig_c, use_container_width=True, key="chart_c", config={'displayModeBar': False, 'staticPlot': True})
 
-    function formatDateToString(dateObj) {
-        const years = dateObj.getFullYear();
-        const months = dateObj.getMonth() + 1;
-        const days = dateObj.getDate();
-        const weekDays = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
-        return `${years}년 ${months}월 ${days}일 ${weekDays[dateObj.getDay()]}`;
-    }
+def get_12m():
+    y, m = now.year, now.month
+    res = []
+    for _ in range(12):
+        res.append(f"{y}-{m:02d}")
+        m -= 1
+        if m == 0:
+            m = 12
+            y -= 1
+    res.reverse()
+    return res
 
-    function getAllSaturdaysOfCurrentYear() {
-        const saturdays = [];
-        let d = new Date(currentYear, 0, 1);
-        while (d.getDay() !== 6) d.setDate(d.getDate() + 1);
-        while (d.getFullYear() === currentYear) {
-            saturdays.push(formatDateToString(new Date(d)));
-            d.setDate(d.getDate() + 7);
-        }
-        return saturdays;
-    }
+df_12 = pd.DataFrame({"Month": get_12m()})
+if not df_all.empty:
+    m_sum = df_all.groupby("Month", as_index=False).agg(Total_Distance=("Distance", "sum"), Run_Count=("Distance", "count"))
+    df_12 = pd.merge(df_12, m_sum, on="Month", how="left").fillna({"Total_Distance": 0.0, "Run_Count": 0})
+else:
+    df_12["Total_Distance"] = 0.0
+    df_12["Run_Count"] = 0
 
-    const allSaturdays = getAllSaturdaysOfCurrentYear();
+df_12["Run_Count"] = df_12["Run_Count"].astype(int)
+df_12["Month_Label"] = df_12["Month"].apply(lambda x: f"{x[2:]}월")
+df_12["Color"] = df_12.apply(lambda r: "#34D399" if r["Month"] == cur_m_str else ("#1E3A8A" if r["Total_Distance"] >= GOAL_KM else "#94A3B8"), axis=1)
 
-    function initCheckinMonthButtons() {
-        const wrapper = document.getElementById('checkin-month-buttons');
-        wrapper.innerHTML = '';
-        ["1월","2월","3월","4월","5월","6월","7월","8월","9월","10월","11월","12월"].forEach(m => {
-            const btn = document.createElement('button');
-            btn.className = `month-btn ${m === checkinSelectedMonth ? 'active' : ''}`;
-            btn.innerText = m;
-            btn.onclick = () => {
-                document.querySelectorAll('#checkin-month-buttons .month-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                checkinSelectedMonth = m;
-                localStorage.setItem('todal_selected_month', m);
-                
-                // 해당 월의 첫 번째 토요일을 기본 선택으로 맞춤
-                const filtered = allSaturdays.filter(dStr => {
-                    const mMatch = dStr.match(/(\d+)월/);
-                    return mMatch && (mMatch[1] + "월") === m;
-                });
-                if (filtered.length > 0) {
-                    selectedDateStr = filtered[filtered.length - 1];
-                    localStorage.setItem('todal_selected_date', selectedDateStr);
-                }
-                
-                renderSaturdayVerticalList();
-            };
-            wrapper.appendChild(btn);
-        });
-    }
+with st.expander("📈 최근 12개월 운동 현황", expanded=True):
+    fig_12 = px.bar(df_12, x="Month_Label", y="Total_Distance")
+    fig_12.update_traces(marker_color=df_12["Color"], cliponaxis=False, hoverinfo="none")
+    fig_12.add_hline(y=GOAL_KM, line_dash="dot", line_color="#64748B", line_width=1.5)
+    
+    ann = [dict(x=r["Month_Label"], y=r["Total_Distance"], text=f"{r['Total_Distance']:.1f}", showarrow=False, xanchor="center", yanchor="bottom", yshift=2, font=dict(size=9, color="#0F172A", family="Pretendard")) for _, r in df_12.iterrows()]
+    fig_12.update_layout(annotations=ann, margin=dict(l=10, r=10, t=10, b=0), height=220, xaxis_title=None, yaxis_title=None, showlegend=False, plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", xaxis=dict(fixedrange=True, showgrid=False, tickfont=dict(size=8, color="#64748B")), yaxis=dict(fixedrange=True, showgrid=True, gridcolor="#E2E8F0", tickfont=dict(size=10, color="#64748B"), rangemode="tozero"), font=dict(size=10, color="#475569"))
+    st.plotly_chart(fig_12, use_container_width=True, key="chart_12", config={'displayModeBar': False, 'staticPlot': True})
 
-    function initStatsMonthButtons() {
-        const wrapper = document.getElementById('stats-month-buttons');
-        wrapper.innerHTML = '';
-        ["전체","1월","2월","3월","4월","5월","6월","7월","8월","9월","10월","11월","12월"].forEach(m => {
-            const btn = document.createElement('button');
-            btn.className = `month-btn ${m === statsSelectedMonth ? 'active' : ''}`;
-            btn.innerText = m;
-            btn.onclick = () => {
-                document.querySelectorAll('#stats-month-buttons .month-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                statsSelectedMonth = m; 
-                renderStats();     
-            };
-            wrapper.appendChild(btn);
-        });
-    }
-
-    function renderSaturdayVerticalList() {
-        const wrapper = document.getElementById('saturday-vertical-wrapper');
-        const header = document.getElementById('saturday-list-header');
-        wrapper.innerHTML = '';
-        header.innerText = `📅 ${currentYear}년 ${checkinSelectedMonth} 토달 출석현황`;
-
-        const filteredSaturdays = allSaturdays.filter(dStr => {
-            const mMatch = dStr.match(/(\d+)월/);
-            return mMatch && (mMatch[1] + "월") === checkinSelectedMonth;
-        });
-
-        if (filteredSaturdays.length === 0) {
-            wrapper.innerHTML = "<div style='padding:10px; color:#888;'>해당 월에 토요일이 없습니다.</div>";
-            return;
-        }
-
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        const validSaturdays = filteredSaturdays.filter(dStr => {
-            const tDate = new Date(dStr.replace(/년|월/g, '-').replace(/일.*/, '').trim());
-            tDate.setHours(0, 0, 0, 0);
-            return tDate <= today;
-        });
-
-        let defaultDate = validSaturdays.length > 0 ? validSaturdays[validSaturdays.length - 1] : filteredSaturdays[0];
-        if (!selectedDateStr || !filteredSaturdays.includes(selectedDateStr)) {
-            selectedDateStr = defaultDate;
-        }
-
-        filteredSaturdays.forEach(dStr => {
-            const btn = document.createElement('button');
-            const cleanDateStr = dStr.replace(/년|월/g, '-').replace(/일.*/, '').trim();
-            const targetDate = new Date(cleanDateStr);
-            targetDate.setHours(0, 0, 0, 0);
-            
-            const isFuture = targetDate > today;
-            const isSelected = (dStr === selectedDateStr);
-
-            if (isFuture) {
-                btn.className = 'saturday-item-btn disabled';
-                btn.innerHTML = `<span>🔒 ${dStr.replace(/^\d{4}년\s*/, '')} (예정)</span>`;
-                btn.onclick = () => alert("아직 다가오지 않은 미래 날짜는 체크할 수 없습니다!");
-            } else {
-                btn.className = `saturday-item-btn ${isSelected ? 'active' : ''}`;
-                btn.innerText = dStr.replace(/^\d{4}년\s*/, '');
-                btn.onclick = () => {
-                    selectedDateStr = dStr;
-                    localStorage.setItem('todal_selected_date', dStr);
-                    renderSaturdayVerticalList();
-                };
-            }
-            wrapper.appendChild(btn);
-        });
-
-        renderCheckinList();
-    }
-
-    function switchTab(tabName) {
-        if (tabName === 'checkin') {
-            document.getElementById('tab-checkin').classList.remove('hidden');
-            document.getElementById('tab-stats').classList.add('hidden');
-            document.getElementById('tab-checkin-btn').classList.add('active');
-            document.getElementById('tab-stats-btn').classList.remove('active');
-        } else {
-            document.getElementById('tab-checkin').classList.add('hidden');
-            document.getElementById('tab-stats').classList.remove('hidden');
-            document.getElementById('tab-checkin-btn').classList.remove('active');
-            document.getElementById('tab-stats-btn').classList.add('active');
-            renderStats(); 
-        }
-    }
-
-    function loadData() {
-        const localLogs = localStorage.getItem('todal_pure_logs');
-        if (localLogs) {
-            try {
-                globalLogs = JSON.parse(localLogs);
-            } catch(e) {
-                globalLogs = [];
-            }
-        }
-
-        initCheckinMonthButtons();
-        initStatsMonthButtons();
-        renderSaturdayVerticalList();
-    }
-
-    function renderCheckinList() {
-        const listDiv = document.getElementById('member-list');
-        listDiv.innerHTML = '';
-
-        const dayAttendance = {};
-        globalLogs.forEach(log => {
-            if (log.date === selectedDateStr && Number(log.score) > 0) {
-                dayAttendance[String(log.name).trim()] = Number(log.score);
-            }
-        });
-
-        globalMembers.forEach(member => {
-            const name = String(member.name).trim();
-            const score = dayAttendance[name] || 0;
-            const isChecked = score > 0;
-
-            const card = document.createElement('div');
-            let cardClass = 'member-card';
-            if (isChecked) {
-                if (score === 10) cardClass += ' checked-10';
-                else if (score === 5) cardClass += ' checked-5';
-                else if (score === 99) cardClass += ' checked-comp';
-            }
-            card.className = cardClass;
-            
-            let badgeHtml = '';
-            if (isChecked) {
-                if (score === 10) badgeHtml = '<span class="badge" style="background:#2ecc71; color:white;">🟢 출석</span>';
-                else if (score === 5) badgeHtml = '<span class="badge" style="background:#3498db; color:white;">🔵 지각</span>';
-                else if (score === 99) badgeHtml = '<span class="badge" style="background:#f39c12; color:white;">🟠 대회</span>';
-            }
-
-            const info = document.createElement('div');
-            info.className = 'member-info';
-            const nameDiv = document.createElement('div');
-            nameDiv.className = 'member-name';
-            nameDiv.textContent = name;
-            const badgeDiv = document.createElement('div');
-            badgeDiv.innerHTML = badgeHtml;
-            info.appendChild(nameDiv);
-            info.appendChild(badgeDiv);
-
-            const buttonGroup = document.createElement('div');
-            buttonGroup.className = 'btn-group';
-
-            const makeButton = (label, buttonScore, className) => {
-                const button = document.createElement('button');
-                button.textContent = label;
-                button.className = className || '';
-                if (isChecked) {
-                    button.disabled = true;
-                    button.style.opacity = '0.4';
-                    button.style.cursor = 'not-allowed';
-                }
-                button.addEventListener('click', () => handleCheckIn(name, buttonScore));
-                buttonGroup.appendChild(button);
-            };
-
-            makeButton('출석(+10)', 10, score === 10 ? 'selected-10' : '');
-            makeButton('지각(+5)', 5, score === 5 ? 'selected-5' : '');
-            makeButton('대회(+10)', 99, score === 99 ? 'selected-comp' : '');
-
-            if (isChecked) {
-                const cancelBtn = document.createElement('button');
-                cancelBtn.textContent = '취소';
-                cancelBtn.className = 'btn-cancel';
-                cancelBtn.addEventListener('click', () => handleCheckIn(name, 0));
-                buttonGroup.appendChild(cancelBtn);
-            }
-
-            card.appendChild(info);
-            card.appendChild(buttonGroup);
-            listDiv.appendChild(card);
-        });
-    }
-
-    function handleCheckIn(name, score) {
-        const cleanName = String(name).trim();
-        const targetDate = selectedDateStr;
-
-        const existing = globalLogs.find(log => log.name === cleanName && log.date === targetDate && Number(log.score) > 0);
-        if (score > 0 && existing) {
-            alert(`[${cleanName}]님은 이미 출석 체크가 완료되었습니다.`);
-            return;
-        }
-
-        if (score === 0) {
-            if (!confirm(`[${targetDate.replace(/^\d{4}년\s*/, '')}] [${cleanName}]님의 출석을 취소하시겠습니까?`)) return;
-        } else {
-            const label = score === 5 ? '지각(+5점)' : score === 99 ? '대회(+10점)' : '출석(+10점)';
-            if (!confirm(`[${targetDate.replace(/^\d{4}년\s*/, '')}] [${cleanName}]님을 [${label}]으로 기록하시겠습니까?`)) return;
-        }
-
-        globalLogs = globalLogs.filter(log => !(log.name === cleanName && log.date === targetDate));
-        
-        if (score > 0) {
-            let mMatch = targetDate.match(/(\d+)월/);
-            globalLogs.push({
-                name: cleanName,
-                date: targetDate,
-                score: score,
-                month: mMatch ? parseInt(mMatch[1], 10) : 0
-            });
-        }
-
-        localStorage.setItem('todal_pure_logs', JSON.stringify(globalLogs));
-        renderCheckinList();
-    }
-
-    function renderStats() {
-        const statsDiv = document.getElementById('stats-list');
-        statsDiv.innerHTML = '';
-
-        const userMonthlyData = {};
-        globalMembers.forEach(m => {
-            userMonthlyData[String(m.name).trim()] = {
-                score: {1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0, 10:0, 11:0, 12:0},
-                att:   {1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0, 10:0, 11:0, 12:0},
-                tardy: {1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0, 10:0, 11:0, 12:0},
-                comp:  {1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0, 10:0, 11:0, 12:0}
-            };
-        });
-
-        const uniqueLogMap = {};
-        globalLogs.forEach(log => {
-            if (Number(log.score) > 0) {
-                uniqueLogMap[log.date + "|" + log.name] = log;
-            }
-        });
-
-        Object.values(uniqueLogMap).forEach(log => {
-            const name = String(log.name).trim();
-            const score = Number(log.score);
-            let m = log.month || 0;
-            if (!m) {
-                const mMatch = String(log.date).match(/(\d+)월/);
-                if (mMatch) m = parseInt(mMatch[1], 10);
-            }
-
-            if (score <= 0 || !userMonthlyData[name] || m < 1 || m > 12) return;
-
-            if (score === 10) { userMonthlyData[name].score[m] += 10; userMonthlyData[name].att[m] += 1; }
-            else if (score === 5) { userMonthlyData[name].score[m] += 5; userMonthlyData[name].tardy[m] += 1; }
-            else if (score === 99) { userMonthlyData[name].score[m] += 10; userMonthlyData[name].comp[m] += 1; }
-        });
-
-        let displayList = [];
-        globalMembers.forEach(member => {
-            const name = String(member.name).trim();
-            let targetScore = 0, targetAtt = 0, targetTardy = 0, targetComp = 0;
-
-            if (statsSelectedMonth === "전체") {
-                for (let m = 1; m <= 12; m++) {
-                    targetScore += userMonthlyData[name].score[m];
-                    targetAtt   += userMonthlyData[name].att[m];
-                    targetTardy += userMonthlyData[name].tardy[m];
-                    targetComp  += userMonthlyData[name].comp[m];
-                }
-            } else {
-                const mNum = parseInt(statsSelectedMonth.replace(/[^0-9]/g, ""), 10);
-                targetScore = userMonthlyData[name].score[mNum];
-                targetAtt   = userMonthlyData[name].att[mNum];
-                targetTardy = userMonthlyData[name].tardy[mNum];
-                targetComp  = userMonthlyData[name].comp[mNum];
-            }
-
-            if (targetScore > 0) {
-                displayList.push({ name, score: targetScore, att: targetAtt, tardy: targetTardy, comp: targetComp });
-            }
-        });
-
-        if (displayList.length === 0) {
-            statsDiv.innerHTML = "<div style='text-align:center; padding:30px; color:#94a3b8; font-weight:bold;'>해당 기간에 출석 기록이 있는 회원이 없습니다.</div>";
-            return;
-        }
-
-        displayList.sort((a, b) => (b.score !== a.score) ? b.score - a.score : a.name.localeCompare(b.name));
-
-        let currentRank = 1;
-        displayList.forEach((item, index) => {
-            if (index > 0 && item.score < displayList[index - 1].score) currentRank = index + 1;
-            const card = document.createElement('div');
-            card.className = 'rank-card';
-            let rankBadge = (currentRank === 1 ? '🥇 1위' : (currentRank === 2 ? '🥈 2위' : (currentRank === 3 ? '🥉 3위' : `${currentRank}위`)));
-            card.innerHTML = `
-                <div class="rank-number">${rankBadge}</div>
-                <div class="rank-name">${item.name}</div>
-                <div class="rank-detail">출석${item.att} · 지각${item.tardy} · 대회${item.comp}</div>
-                <div class="rank-score">${item.score}점</div>
-            `;
-            statsDiv.appendChild(card);
-        });
-    }
-
-    loadData();
-</script>
-
-</body>
-</html>
+with st.expander("📋 월별 현황 요약", expanded=False):
+    t_df = df_12.sort_values("Month", ascending=False).copy()
+    t_df["조회 월"] = t_df["Month_Label"]
+    t_df["총 거리 (km)"] = t_df["Total_Distance"].apply(lambda x: f"{x:.2f}")
+    t_df["러닝 횟수"] = t_df["Run_Count"].astype(str) + "회"
+    t_df["목표 달성률"] = (t_df["Total_Distance"] / GOAL_KM * 100).round(1).astype(str) + "%"
+    
+    disp = t_df[["조회 월", "총 거리 (km)", "러닝 횟수", "목표 달성률"]].reset_index(drop=True)
+    html = "<table class='custom-table'><thead><tr>" + "".join([f"<th>{c}</th>" for c in disp.columns]) + "</tr></thead><tbody>"
+    for _, row in disp.iterrows():
+        html += "<tr>" + "".join([f"<td>{v}</td>" for v in row]) + "</tr>"
+    html += "</tbody></table>"
+    st.markdown(html, unsafe_allow_html=True)
