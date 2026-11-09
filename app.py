@@ -99,7 +99,7 @@
 </div>
 
 <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbxFoJVVdoYM1-b2P445N-t-j36eN8r2Sc8gd0h8GBu6QafgUEJgohupTZOvbYuwdbMp5Q/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbz7swuRlHY6ABel8DKy7QSa47DiHhuKKIhHi1GgexCZp8C0CFM6_m2X9LYKO0cVCxY0Jw/exec";
 
     let globalMembers = [];
     let globalLogs = [];
@@ -299,7 +299,6 @@
         const dayAttendance = {};
         const targetYMD = extractYMD(selectedDateStr);
 
-        // 💡 요일 차이와 무관하게 연·월·일이 같으면 출석 상태 복원
         globalLogs.forEach(log => {
             if (log.date && extractYMD(log.date) === targetYMD && Number(log.score) > 0) {
                 dayAttendance[String(log.name).trim()] = Number(log.score);
@@ -445,13 +444,17 @@
 
         renderCheckinList();
 
-        fetch(API_URL, {
-            method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, score, date: selectedDateStr })
-        }).catch(err => console.error(err));
+        // 💡 [핵심 해결] GET 방식으로 서버에 저장 요청 (데이터 유실 및 무응답 문제 완벽 차단)
+        const saveUrl = `${API_URL}?action=save&name=${encodeURIComponent(name)}&score=${score}&date=${encodeURIComponent(selectedDateStr)}&t=${new Date().getTime()}`;
+        fetch(saveUrl, { method: 'GET', redirect: 'follow' })
+            .then(res => res.json())
+            .then(data => {
+                loadData(); // 서버 저장 완료 후 최신 데이터 재동기화
+            })
+            .catch(err => console.error(err));
     }
 
-    function cancelCheckIn(name, event) {
+    function cancelCheckIn(name) {
         if(!confirm(`[${selectedDateStr.replace(/^\d{4}년\s*/, '')}] [${name}]님의 출석을 취소하시겠습니까?`)) return;
 
         const targetYMD = extractYMD(selectedDateStr);
@@ -459,10 +462,13 @@
         
         renderCheckinList();
 
-        fetch(API_URL, {
-            method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, score: 0, date: selectedDateStr })
-        }).catch(err => console.error(err));
+        const saveUrl = `${API_URL}?action=save&name=${encodeURIComponent(name)}&score=0&date=${encodeURIComponent(selectedDateStr)}&t=${new Date().getTime()}`;
+        fetch(saveUrl, { method: 'GET', redirect: 'follow' })
+            .then(res => res.json())
+            .then(data => {
+                loadData();
+            })
+            .catch(err => console.error(err));
     }
 
     initCheckinMonthButtons();
