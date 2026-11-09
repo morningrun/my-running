@@ -97,7 +97,7 @@
 
 <script>
     // 💡 여기에 구글 웹 앱 URL을 넣어주세요!
-    const API_URL = "https://script.google.com/macros/s/AKfycbyPD-g3-AhImPFdQk_wBokuFr4iT8uWJN4U44xl6RqBbfkFBgGWe7Vz-csyv3GEbbE-4A/exec";
+    const API_URL = "여기에_구글_웹_앱_URL을_넣으세요https://script.google.com/macros/s/AKfycbyPD-g3-AhImPFdQk_wBokuFr4iT8uWJN4U44xl6RqBbfkFBgGWe7Vz-csyv3GEbbE-4A/exec";
 
     let globalMembers = [];
     let globalLogs = [];
@@ -352,7 +352,7 @@
             }
         });
 
-        const displayList = [];
+        let displayList = [];
         globalMembers.forEach(member => {
             const name = member.name;
             let targetScore = 0, targetAtt = 0, targetTardy = 0, targetComp = 0;
@@ -372,8 +372,16 @@
                 targetComp  = userMonthlyData[name].comp[mNum];
             }
 
-            displayList.push({ name, score: targetScore, att: targetAtt, tardy: targetTardy, comp: targetComp });
+            // 💡 점수가 0점보다 큰 (활동 기록이 있는) 회원만 목록에 추가
+            if (targetScore > 0) {
+                displayList.push({ name, score: targetScore, att: targetAtt, tardy: targetTardy, comp: targetComp });
+            }
         });
+
+        if (displayList.length === 0) {
+            statsDiv.innerHTML = "<div style='text-align:center; padding:30px; color:#94a3b8; font-weight:bold;'>해당 기간에 출석 기록이 있는 회원이 없습니다.</div>";
+            return;
+        }
 
         displayList.sort((a, b) => (b.score !== a.score) ? b.score - a.score : a.name.localeCompare(b.name));
 
@@ -383,7 +391,7 @@
 
             const card = document.createElement('div');
             card.className = 'rank-card';
-            let rankBadge = (item.score === 0) ? '-' : (currentRank === 1 ? '🥇 1위' : (currentRank === 2 ? '🥈 2위' : (currentRank === 3 ? '🥉 3위' : `${currentRank}위`)));
+            let rankBadge = (currentRank === 1 ? '🥇 1위' : (currentRank === 2 ? '🥈 2위' : (currentRank === 3 ? '🥉 3위' : `${currentRank}위`)));
 
             card.innerHTML = `
                 <div class="rank-number">${rankBadge}</div>
@@ -416,9 +424,7 @@
     }
 
     function cancelCheckIn(name) {
-        if(!confirm(`[${selectedCodeStr = selectedDateStr.replace(/^\d{4}년\s*/, '')}] [${name}]님의 출석을 취소하시겠습니까?`.replace(/.+?\] /, ''))) { // clean confirm
-            if(!confirm(`[${selectedDateStr.replace(/^\d{4}년\s*/, '')}] [${name}]님의 출석을 취소하시겠습니까?`)) return;
-        }
+        if(!confirm(`[${selectedDateStr.replace(/^\d{4}년\s*/, '')}] [${name}]님의 출석을 취소하시겠습니까?`)) return;
 
         globalLogs = globalLogs.filter(l => !(l.name === name && l.date.trim() === selectedDateStr.trim()));
         renderCheckinList();
