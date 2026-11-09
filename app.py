@@ -99,7 +99,7 @@
 </div>
 
 <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbwvdM1L2DmlrkrJZZXqkzSO384gD77QdN_79bonlknndoSBA164v0Qp6ipa8dNdgTvIag/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycby-xJEI0cYgX5TiSzpYAd4PGnB-onsGA6PzFow44BzRiAdT8zJB9SiiJwHzeRJTa4uVMQ/exec";
 
     let globalMembers = [];
     let globalLogs = [];
@@ -260,14 +260,7 @@
             if (data.success === false) throw new Error(data.message || "데이터 불러오기 실패");
 
             globalMembers = Array.isArray(data.members) ? data.members : [];
-            
-            // 💡 서버 데이터를 기준으로 삼되, 서버 응답이 일시적으로 비어있을 때 기존 로컬 데이터가 날아가지 않도록 안전 병합
-            const serverLogs = Array.isArray(data.logs) ? data.logs : [];
-            if (serverLogs.length > 0) {
-                globalLogs = serverLogs;
-            } else if (globalLogs.length > 0 && serverLogs.length === 0) {
-                console.log("서버 응답이 비어있어 기존 데이터를 유지합니다.");
-            }
+            globalLogs = Array.isArray(data.logs) ? data.logs : [];
 
             renderSaturdayVerticalList();
             if (!document.getElementById('tab-stats').classList.contains('hidden')) {
@@ -407,7 +400,13 @@
             const result = await response.json();
             if (!result.success) throw new Error(result.message || '서버 저장 실패');
 
-            await loadData();
+            // 💡 서버가 저장 후 최신 데이터를 즉시 반환하므로 딜레이 없이 그대로 반영
+            globalMembers = Array.isArray(result.members) ? result.members : globalMembers;
+            globalLogs = Array.isArray(result.logs) ? result.logs : globalLogs;
+            renderSaturdayVerticalList();
+            if (!document.getElementById('tab-stats').classList.contains('hidden')) {
+                renderStats();
+            }
         } catch (err) {
             console.error('출석 저장 오류:', err);
             alert('서버 저장 또는 확인에 실패했습니다. 다시 시도해 주세요.');
@@ -428,7 +427,7 @@
             userMonthlyData[String(m.name).trim()] = {
                 score: {1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0, 10:0, 11:0, 12:0},
                 att:   {1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0, 10:0, 11:0, 12:0},
-                    tardy: {1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0, 10:0, 11:0, 12:0},
+                tardy: {1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0, 10:0, 11:0, 12:0},
                 comp:  {1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0, 10:0, 11:0, 12:0}
             };
         });
