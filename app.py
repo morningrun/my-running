@@ -99,7 +99,7 @@
 </div>
 
 <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbybcW4ucyWYKILgKj7wBj9ZxadogWRZ5lwO6xmdD20HlrhmjFLlEiOh_UQTi1m9W2rj/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbzKEavRRrXCYNcBG-cfXKN0nEJA9pkvSI4GlFJeoel0qifHS5WYY93dWDxx81jxFNtgTw/exec";
 
     let globalMembers = [];
     let globalLogs = [];
@@ -119,12 +119,16 @@
         return `${years}년 ${months}월 ${days}일 ${weekDays[dateObj.getDay()]}`;
     }
 
-    // 💡 프론트엔드에서도 날짜를 무조건 "YYYY-M-D" 숫자 형태로 통일하여 비교
+    // 💡 프론트엔드 strictYMD를 백엔드 normalizeDate_와 100% 일치시킴
     function strictYMD(str) {
         if (!str) return "";
         const match = String(str).match(/(\d{4}).*?(\d+).*?(\d+)/);
         if (match) {
             return match[1] + "-" + Number(match[2]) + "-" + Number(match[3]);
+        }
+        const match2 = String(str).match(/(\d+)\s*월\s*(\d+)\s*일/);
+        if (match2) {
+            return "2026-" + Number(match2[1]) + "-" + Number(match2[2]);
         }
         return String(str).replace(/\s+/g, "").trim();
     }
