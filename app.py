@@ -99,7 +99,7 @@
 </div>
 
 <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbyd5Zra94mKsjXsAc5wni5UjuKrTVXd83QYH9KZEuQYV74DCDOouAXeiK6TNseC7u7ebA/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbycTsvIUA2L7Vlq43xtTu6qHZFenVh3FQsescd6P_igcvnq2W3l1dfwuWmGHbaO3maiWQ/exec";
 
     let globalMembers = [];
     let globalLogs = [];
@@ -118,11 +118,15 @@
         return `${years}년 ${months}월 ${days}일 ${weekDays[dateObj.getDay()]}`;
     }
 
-    function extractYMD(str) {
+    // 💡 프론트엔드 표준화 함수 (앞자리 0을 맞춰서 날짜 비교 오류 원천 차단)
+    function normalizeYMD(str) {
         if (!str) return "";
         const match = String(str).match(/(\d{4}).*?(\d+).*?(\d+)/);
         if (match) {
-            return match[1] + "-" + match[2] + "-" + match[3];
+            const y = match[1];
+            const m = Number(match[2]);
+            const d = Number(match[3]);
+            return y + "-" + (m < 10 ? "0" + m : m) + "-" + (d < 10 ? "0" + d : d);
         }
         return String(str).replace(/\s+/g, "").trim();
     }
@@ -297,10 +301,10 @@
         }
 
         const dayAttendance = {};
-        const targetYMD = extractYMD(selectedDateStr);
+        const targetYMD = normalizeYMD(selectedDateStr);
 
         globalLogs.forEach(log => {
-            if (log.date && extractYMD(log.date) === targetYMD && Number(log.score) > 0) {
+            if (log.date && normalizeYMD(log.date) === targetYMD && Number(log.score) > 0) {
                 dayAttendance[String(log.name).trim()] = Number(log.score);
             }
         });
@@ -426,8 +430,8 @@
     }
 
     function checkIn(name, score) {
-        const targetYMD = extractYMD(selectedDateStr);
-        let already = globalLogs.find(l => l.name === name && extractYMD(l.date) === targetYMD && Number(l.score) > 0);
+        const targetYMD = normalizeYMD(selectedDateStr);
+        let already = globalLogs.find(l => l.name === name && normalizeYMD(l.date) === targetYMD && Number(l.score) > 0);
         
         if (already) {
             alert(`[${name}]님은 이미 해당 날짜에 출석 체크가 완료되었습니다. 변경하려면 먼저 [취소] 후 다시 선택해 주세요.`);
@@ -438,18 +442,17 @@
         let label = (score === 5) ? '지각(+5점)' : (score === 99 ? '대회(+10점)' : '출석(+10점)');
         if(!confirm(`[${selectedDateStr.replace(/^\d{4}년\s*/, '')}] [${name}]님을 [${label}]으로 기록하시겠습니까?`)) return;
 
-        globalLogs = globalLogs.filter(l => !(l.name === name && extractYMD(l.date) === targetYMD));
+        globalLogs = globalLogs.filter(l => !(l.name === name && normalizeYMD(l.date) === targetYMD));
         let mMatch = selectedDateStr.match(/(\d+)월/);
         globalLogs.push({ date: selectedDateStr, name, month: mMatch ? parseInt(mMatch[1], 10) : 0, score });
 
         renderCheckinList();
 
-        // 💡 [핵심 해결] GET 방식으로 서버에 저장 요청 (데이터 유실 및 무응답 문제 완벽 차단)
         const saveUrl = `${API_URL}?action=save&name=${encodeURIComponent(name)}&score=${score}&date=${encodeURIComponent(selectedDateStr)}&t=${new Date().getTime()}`;
         fetch(saveUrl, { method: 'GET', redirect: 'follow' })
             .then(res => res.json())
             .then(data => {
-                loadData(); // 서버 저장 완료 후 최신 데이터 재동기화
+                loadData();
             })
             .catch(err => console.error(err));
     }
@@ -457,8 +460,8 @@
     function cancelCheckIn(name) {
         if(!confirm(`[${selectedDateStr.replace(/^\d{4}년\s*/, '')}] [${name}]님의 출석을 취소하시겠습니까?`)) return;
 
-        const targetYMD = extractYMD(selectedDateStr);
-        globalLogs = globalLogs.filter(l => !(l.name === name && extractYMD(l.date) === targetYMD));
+        const targetYMD = normalizeYMD(selectedDateStr);
+        globalLogs = globalLogs.filter(l => !(l.name === name && normalizeYMD(l.date) === targetYMD));
         
         renderCheckinList();
 
