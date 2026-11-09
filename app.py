@@ -120,6 +120,12 @@
         return `${years}년 ${months}월 ${days}일 ${weekDays[dateObj.getDay()]}`;
     }
 
+    // 날짜 문자열을 일치시키기 위해 공백 및 형식 정규화 함수
+    function normalizeDateStr(str) {
+        if (!str) return "";
+        return String(str).replace(/\s+/g, "").trim();
+    }
+
     function getAllSaturdaysOfCurrentYear() {
         const saturdays = [];
         let d = new Date(currentYear, 0, 1);
@@ -280,14 +286,17 @@
         if(globalMembers.length === 0) return;
 
         const dayAttendance = {};
+        const targetNormalized = normalizeDateStr(selectedDateStr);
+
+        // 💡 [핵심 복원 보완] 공백이나 형식이 미세하게 달라도 날짜가 정확히 일치하도록 정규화 비교
         globalLogs.forEach(log => {
-            if (log.date && log.date.trim() === selectedDateStr.trim() && Number(log.score) > 0) {
-                dayAttendance[log.name] = Number(log.score);
+            if (log.date && normalizeDateStr(log.date) === targetNormalized && Number(log.score) > 0) {
+                dayAttendance[String(log.name).trim()] = Number(log.score);
             }
         });
 
         globalMembers.forEach(member => {
-            const name = member.name;
+            const name = String(member.name).trim();
             const score = dayAttendance[name] || 0;
             const isChecked = score > 0;
 
@@ -330,7 +339,7 @@
 
         const userMonthlyData = {};
         globalMembers.forEach(m => {
-            userMonthlyData[m.name] = {
+            userMonthlyData[String(m.name).trim()] = {
                 score: {1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0, 10:0, 11:0, 12:0},
                 att:   {1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0, 10:0, 11:0, 12:0},
                 tardy: {1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0, 10:0, 11:0, 12:0},
@@ -339,7 +348,7 @@
         });
 
         globalLogs.forEach(log => {
-            const name = log.name;
+            const name = String(log.name).trim();
             const score = Number(log.score);
             const m = Number(log.month);
             if (score <= 0 || !userMonthlyData[name] || m < 1 || m > 12) return;
@@ -358,7 +367,7 @@
 
         let displayList = [];
         globalMembers.forEach(member => {
-            const name = member.name;
+            const name = String(member.name).trim();
             let targetScore = 0, targetAtt = 0, targetTardy = 0, targetComp = 0;
 
             if (statsSelectedMonth === "전체") {
@@ -407,26 +416,25 @@
     }
 
     function checkIn(name, score) {
-        // 💡 [중복 방지 보완] 이미 해당 날짜/이름으로 출석 기록이 있는지 로컬 배열에서 먼저 완벽히 검사
-        let already = globalLogs.find(l => l.name === name && l.date.trim() === selectedDateStr.trim() && Number(l.score) > 0);
+        const targetNormalized = normalizeDateStr(selectedDateStr);
+        let already = globalLogs.find(l => l.name === name && normalizeDateStr(l.date) === targetNormalized && Number(l.score) > 0);
+        
         if (already) {
             alert(`[${name}]님은 이미 해당 날짜에 출석 체크가 완료되었습니다. 변경하려면 먼저 [취소] 후 다시 선택해 주세요.`);
-            renderCheckinList(); // 화면 즉시 동기화
+            renderCheckinList();
             return;
         }
 
         let label = (score === 5) ? '지각(+5점)' : (score === 99 ? '대회(+10점)' : '출석(+10점)');
         if(!confirm(`[${selectedDateStr.replace(/^\d{4}년\s*/, '')}] [${name}]님을 [${label}]으로 기록하시겠습니까?`)) return;
 
-        // 1. 기존 중복 기록을 깨끗이 제거한 후 새로운 기록 추가
-        globalLogs = globalLogs.filter(l => !(l.name === name && l.date.trim() === selectedDateStr.trim()));
+        // 기존 로컬 로그에서 해당 날짜+이름 항목 제거 후 새 기록 추가
+        globalLogs = globalLogs.filter(l => !(l.name === name && normalizeDateStr(l.date) === targetNormalized));
         let mMatch = selectedDateStr.match(/(\d+)월/);
         globalLogs.push({ date: selectedDateStr, name, month: mMatch ? parseInt(mMatch[1], 10) : 0, score });
 
-        // 2. 화면 즉시 갱신 (서버 응답을 기다리지 않고 바로 반영되어 연속 클릭 방지)
         renderCheckinList();
 
-        // 3. 서버 전송
         fetch(API_URL, {
             method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name, score, date: selectedDateStr })
@@ -436,13 +444,11 @@
     function cancelCheckIn(name) {
         if(!confirm(`[${selectedDateStr.replace(/^\d{4}년\s*/, '')}] [${name}]님의 출석을 취소하시겠습니까?`)) return;
 
-        // 1. 로컬 배열에서 해당 기록 제거
-        globalLogs = globalLogs.filter(l => !(l.name === name && l.date.trim() === selectedDateStr.trim()));
+        const targetNormalized = normalizeDateStr(selectedDateStr);
+        globalLogs = globalLogs.filter(l => !(l.name === name && normalizeDateStr(l.date) === targetNormalized));
         
-        // 2. 화면 즉시 갱신
         renderCheckinList();
 
-        // 3. 서버 전송 (score: 0으로 취소 반영)
         fetch(API_URL, {
             method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name, score: 0, date: selectedDateStr })
