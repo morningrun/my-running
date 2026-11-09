@@ -118,14 +118,12 @@
         return `${years}년 ${months}월 ${days}일 ${weekDays[dateObj.getDay()]}`;
     }
 
-    function normalizeYMD(str) {
+    // 💡 [핵심 철통 방어] 어떤 날짜 형태든 "2026-11-7" 형태로 무조건 일치하게 변환하는 표준화 함수
+    function strictYMD(str) {
         if (!str) return "";
         const match = String(str).match(/(\d{4}).*?(\d+).*?(\d+)/);
         if (match) {
-            const y = match[1];
-            const m = Number(match[2]);
-            const d = Number(match[3]);
-            return y + "-" + (m < 10 ? "0" + m : m) + "-" + (d < 10 ? "0" + d : d);
+            return match[1] + "-" + Number(match[2]) + "-" + Number(match[3]);
         }
         return String(str).replace(/\s+/g, "").trim();
     }
@@ -276,11 +274,11 @@
         }
 
         const dayAttendance = {};
-        const targetYMD = normalizeYMD(selectedDateStr);
+        const targetYMD = strictYMD(selectedDateStr);
 
-        // 💡 서버에서 불러온 로그 중 현재 선택된 날짜와 일치하는 기록을 매핑
+        // 💡 서버에서 불러온 로그와 현재 선택된 날짜를 strictYMD로 완벽 일치 비교
         globalLogs.forEach(log => {
-            if (log.date && normalizeYMD(log.date) === targetYMD && Number(log.score) > 0) {
+            if (log.date && strictYMD(log.date) === targetYMD && Number(log.score) > 0) {
                 dayAttendance[String(log.name).trim()] = Number(log.score);
             }
         });
@@ -306,7 +304,7 @@
                 else if (score === 99) badgeHtml = '<span class="badge" style="background:#f39c12; color:white;">🟠 대회</span>';
             }
 
-            // 💡 이미 출석된 회원이면 추가 클릭 버튼을 비활성화(disabled) 시키거나 취소 버튼만 노출하여 추가 점수 원천 차단
+            // 💡 이미 체크된 회원은 추가 점수 버튼을 완전히 비활성화(disabled)하여 중복 점수 상승 및 추가 클릭을 원천 차단
             card.innerHTML = `
                 <div class="member-info">
                     <div class="member-name">${name}</div>
@@ -324,10 +322,9 @@
     }
 
     function handleCheckIn(name, score) {
-        const targetYMD = normalizeYMD(selectedDateStr);
+        const targetYMD = strictYMD(selectedDateStr);
         
-        // 💡 이미 체크된 상태에서 취소(0)가 아닌 다른 버튼을 누를 경우 원천 차단
-        let existing = globalLogs.find(l => l.name === name && normalizeYMD(l.date) === targetYMD && Number(l.score) > 0);
+        let existing = globalLogs.find(l => l.name === name && strictYMD(l.date) === targetYMD && Number(l.score) > 0);
         if (score > 0 && existing) {
             alert(`[${name}]님은 이미 출석 체크가 완료되었습니다. 변경하시려면 먼저 [취소] 후 선택해 주세요.`);
             return;
@@ -340,8 +337,7 @@
             if(!confirm(`[${selectedDateStr.replace(/^\d{4}년\s*/, '')}] [${name}]님을 [${label}]으로 기록하시겠습니까?`)) return;
         }
 
-        // 로컬 배열 즉시 반영 후 화면 갱신
-        globalLogs = globalLogs.filter(l => !(l.name === name && normalizeYMD(l.date) === targetYMD));
+        globalLogs = globalLogs.filter(l => !(l.name === name && strictYMD(l.date) === targetYMD));
         if (score > 0) {
             let mMatch = selectedDateStr.match(/(\d+)월/);
             globalLogs.push({ date: selectedDateStr, name, month: mMatch ? parseInt(mMatch[1], 10) : 0, score });
@@ -349,12 +345,11 @@
 
         renderCheckinList();
 
-        // 서버 전송
         const saveUrl = `${API_URL}?name=${encodeURIComponent(name)}&score=${score}&date=${encodeURIComponent(selectedDateStr)}&t=${new Date().getTime()}`;
         fetch(saveUrl, { method: 'GET', cache: 'no-cache' })
             .then(res => res.json())
             .then(data => {
-                loadData(); // 서버 동기화 후 최신 데이터 재조회
+                loadData();
             })
             .catch(err => console.error("서버 저장 오류:", err));
     }
