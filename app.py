@@ -871,7 +871,6 @@
                     
                     let btnGroupHtml = `<div class="btn-group">`;
 
-                    // [안전장치] 이미 접수한 회원은 실수로 취소하지 못하도록 고정 확정 표시
                     if (!ended) {
                         btnGroupHtml += `
                             <button class="selected-course ${cardStyleClass}" style="flex: 2 !important; background: #f0fdf4; border-color: #86efac; color: #15803d;" disabled>✅ 최종 신청완료 (확정)</button>
