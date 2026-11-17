@@ -274,9 +274,10 @@
             <div style="display:flex; align-items:center; gap:8px; margin-top:4px;">
                 <label style="font-size:0.85rem; font-weight:700; color:#38bdf8;">진행 상태:</label>
                 <select id="new-race-status" style="padding:6px 10px; border-radius:6px; background:#0f172a; color:white; font-weight:700;">
-                    <option value="자동(날짜기준)">자동 (날짜 지나면 자동 종료)</option>
+                    <option value="자동(날짜기준)">자동 (대회일 지나면 자동 종료)</option>
+                    <option value="강제마감">🔴 강제 접수마감 (조기마감/선착순완료)</option>
                     <option value="진행중">항상 진행중 (수동)</option>
-                    <option value="종료">접수 완료 / 항상 종료 (수동 제어)</option>
+                    <option value="종료">완전 종료 (대회 종료)</option>
                 </select>
             </div>
             
@@ -409,7 +410,6 @@
 
     function getCourseStyleClass(course) {
         if (!course) return '';
-        if (course.includes('풀코с')) return 'style-full';
         if (course.includes('풀코스')) return 'style-full';
         if (course.includes('하프')) return 'style-half';
         if (course.includes('10k')) return 'style-10k';
@@ -504,7 +504,7 @@
 
     function isRaceEnded(race) {
         const status = race.status || "";
-        if (status === "종료") return true;
+        if (status === "강제마감" || status === "종료") return true;
         if (status === "진행중") return false;
 
         const name = race.name || "";
@@ -733,9 +733,17 @@
             });
         }
 
-        const badgeHtml = isEnded 
-            ? `<span class="status-badge ended">종료됨</span>`
-            : `<span class="status-badge active-badge">진행중</span>`;
+        let badgeText = "진행중";
+        let badgeClass = "active-badge";
+        if (race.status === "강제마감") {
+            badgeText = "강제마감";
+            badgeClass = "ended";
+        } else if (isEnded) {
+            badgeText = "마감됨";
+            badgeClass = "ended";
+        }
+
+        const badgeHtml = `<span class="status-badge ${badgeClass}">${badgeText}</span>`;
 
         const typeBadge = race.itemType === 'event' 
             ? `<span class="badge-type-event">🎉 행사</span>` 
@@ -800,7 +808,8 @@
 
         const ended = isRaceEnded(currentRace);
         if (ended) {
-            wrapper.innerHTML = "<div style='text-align:center; padding:12px; color:#dc2626; font-weight:700; background:#fef2f2; border-radius:6px; margin-bottom:8px; font-size:0.82rem;'>🔒 기한이 종료되었거나 마감 처리된 항목이므로 신청 및 변경이 불가합니다.</div>";
+            const reason = currentRace.status === "강제마감" ? "관리자에 의해 강제 접수 마감된 항목입니다." : "접수 기한이 마감되었거나 종료된 항목입니다.";
+            wrapper.innerHTML = `<div style='text-align:center; padding:12px; color:#dc2626; font-weight:700; background:#fef2f2; border-radius:6px; margin-bottom:8px; font-size:0.82rem;'>🔒 ${reason}</div>`;
         }
 
         const raceApps = globalApplications[selectedRaceId] || {};
@@ -862,13 +871,13 @@
                     
                     let btnGroupHtml = `<div class="btn-group">`;
 
+                    // [안전장치] 이미 접수한 회원은 실수로 취소하지 못하도록 고정 확정 표시
                     if (!ended) {
                         btnGroupHtml += `
-                            <button class="selected-course ${cardStyleClass}" disabled>신청: ${displayApplied}</button>
-                            <button class="btn-cancel" onclick="confirmAndApply('${member.name}', null)">신청취소</button>
+                            <button class="selected-course ${cardStyleClass}" style="flex: 2 !important; background: #f0fdf4; border-color: #86efac; color: #15803d;" disabled>✅ 최종 신청완료 (확정)</button>
                         `;
                     } else {
-                        btnGroupHtml += `<button class="selected-course ${cardStyleClass}" disabled>신청완료: ${displayApplied}</button>`;
+                        btnGroupHtml += `<button class="selected-course ${cardStyleClass}" style="flex: 2 !important;" disabled>신청완료 (접수 마감됨)</button>`;
                     }
                     btnGroupHtml += `</div>`;
 
@@ -879,7 +888,7 @@
                                     <span style="color:#64748b; font-weight:700; min-width:18px;">${index + 1}.</span> 
                                     <strong style="font-size:0.85rem; white-space:nowrap;">${member.name}</strong>
                                 </div>
-                                <div><span class="applied-badge ${cardStyleClass}">✅ ${displayApplied} 신청완료</span></div>
+                                <div><span class="applied-badge ${cardStyleClass}">✅ ${displayApplied}</span></div>
                             </div>
                             ${btnGroupHtml}
                         </div>
@@ -911,7 +920,7 @@
                         btnGroupHtml += `<button class="course-btn-style" onclick="confirmAndApply('${member.name}', '${courseWithPrice}')">${displayBtnText}</button>`;
                     });
                 } else {
-                    btnGroupHtml += `<button style="background:#f1f5f9; color:#94a3b8;" disabled>종료됨</button>`;
+                    btnGroupHtml += `<button style="background:#f1f5f9; color:#dc2626; font-weight:800;" disabled>접수 마감됨</button>`;
                 }
                 btnGroupHtml += `</div>`;
 
@@ -943,19 +952,11 @@
         let message = "";
         const isEvent = (currentRace.itemType === 'event');
 
-        if (courseWithPrice === "null" || !courseWithPrice) {
-            if (isEvent) {
-                message = `[${currentRace.name}]\n\n${memberName}님의 참석(신청)을 취소하시겠습니까?`;
-            } else {
-                message = `[${currentRace.name}]\n\n${memberName}님의 참가 신청을 취소하시겠습니까?`;
-            }
+        let cleanCourseName = courseWithPrice.replace(/\s*\(.*?원\)/g, "").trim();
+        if (isEvent) {
+            message = `[${currentRace.name}]\n\n${memberName}님을 [${cleanCourseName}] 항목으로 참석(신청)하시겠습니까?`;
         } else {
-            let cleanCourseName = courseWithPrice.replace(/\s*\(.*?원\)/g, "").trim();
-            if (isEvent) {
-                message = `[${currentRace.name}]\n\n${memberName}님을 [${cleanCourseName}] 항목으로 참석(신청)하시겠습니까?`;
-            } else {
-                message = `[${currentRace.name}]\n\n${memberName}님을 [${cleanCourseName}] 코스로 참가 신청하시겠습니까?`;
-            }
+            message = `[${currentRace.name}]\n\n${memberName}님을 [${cleanCourseName}] 코스로 참가 신청하시겠습니까?`;
         }
 
         if (confirm(message)) {
@@ -965,17 +966,16 @@
 
     async function handleApply(memberName, course) {
         const currentRace = globalRaces.find(r => r.id === selectedRaceId);
-        if (!currentRace || isRaceEnded(currentRace)) return;
+        if (!currentRace || isRaceEnded(currentRace)) {
+            alert("접수가 마감되어 신청할 수 없습니다.");
+            return;
+        }
 
         if (!globalApplications[selectedRaceId]) {
             globalApplications[selectedRaceId] = {};
         }
 
-        if (course === "null" || !course) {
-            delete globalApplications[selectedRaceId][memberName];
-        } else {
-            globalApplications[selectedRaceId][memberName] = course;
-        }
+        globalApplications[selectedRaceId][memberName] = course;
 
         refreshUI();
 
@@ -1325,16 +1325,28 @@
 
         globalRaces.forEach(race => {
             const ended = isRaceEnded(race);
-            const statusLabel = race.status === "종료" ? "종료(수동)" : (race.status === "진행중" ? "진행중(수동)" : (ended ? "종료(자동)" : "진행중(자동)"));
+            let statusLabel = "진행중(자동)";
+            if (race.status === "강제마감") statusLabel = "🔴 강제마감됨";
+            else if (race.status === "종료") statusLabel = "종료(수동)";
+            else if (race.status === "진행중") statusLabel = "진행중(수동)";
+            else if (ended) statusLabel = "종료(날짜지남)";
+
             const typeLabel = race.itemType === 'event' ? '[행사]' : '[대회]';
+
+            const isForceClosed = (race.status === "강제마감");
+            const toggleBtnText = isForceClosed ? "🟢 접수 재개하기" : "🔴 강제 접수마감";
+            const toggleBtnBg = isForceClosed ? "#059669" : "#dc2626";
 
             const row = document.createElement('div');
             row.className = 'race-admin-row';
             row.innerHTML = `
-                <div style="font-size:0.85rem;"><strong>${typeLabel} ${race.name}</strong> <span style="font-size:0.7rem; color:${ended?'#94a3b8':'#38bdf8'};">[${statusLabel}]</span><br><span style="font-size:0.72rem; color:#cbd5e1;">내용: ${race.courses}</span><br><span style="font-size:0.7rem; color:#94a3b8;">${race.date} / 마감: ${race.deadline}</span></div>
-                <div style="display:flex; gap:4px;">
-                    <button class="race-edit-btn" data-id="${race.id}" style="background:#2563eb; color:white; border:none; padding:5px 8px; border-radius:5px; cursor:pointer; font-size:0.75rem; font-weight:700;">수정</button>
-                    <button class="race-del-btn" data-id="${race.id}" style="background:#dc2626; color:white; border:none; padding:5px 8px; border-radius:5px; cursor:pointer; font-size:0.75rem; font-weight:700;">삭제</button>
+                <div style="font-size:0.85rem;"><strong>${typeLabel} ${race.name}</strong> <span style="font-size:0.7rem; color:${isForceClosed?'#fca5a5':'#38bdf8'};">[${statusLabel}]</span><br><span style="font-size:0.72rem; color:#cbd5e1;">내용: ${race.courses}</span><br><span style="font-size:0.7rem; color:#94a3b8;">${race.date} / 마감: ${race.deadline}</span></div>
+                <div style="display:flex; gap:4px; flex-direction:column; align-items:flex-end;">
+                    <div style="display:flex; gap:4px;">
+                        <button class="race-edit-btn" data-id="${race.id}" style="background:#2563eb; color:white; border:none; padding:4px 7px; border-radius:4px; cursor:pointer; font-size:0.72rem; font-weight:700;">수정</button>
+                        <button class="race-del-btn" data-id="${race.id}" style="background:#475569; color:white; border:none; padding:4px 7px; border-radius:4px; cursor:pointer; font-size:0.72rem; font-weight:700;">삭제</button>
+                    </div>
+                    <button class="race-force-close-btn" data-id="${race.id}" style="background:${toggleBtnBg}; color:white; border:none; padding:4px 7px; border-radius:4px; cursor:pointer; font-size:0.72rem; font-weight:700; margin-top:2px;">${toggleBtnText}</button>
                 </div>
             `;
             listDiv.appendChild(row);
@@ -1346,6 +1358,31 @@
         listDiv.querySelectorAll('.race-del-btn').forEach(btn => {
             btn.onclick = () => removeRace(btn.getAttribute('data-id'));
         });
+        listDiv.querySelectorAll('.race-force-close-btn').forEach(btn => {
+            btn.onclick = () => toggleForceCloseRace(btn.getAttribute('data-id'));
+        });
+    }
+
+    async function toggleForceCloseRace(raceId) {
+        const race = globalRaces.find(r => r.id === raceId);
+        if (!race) return;
+
+        if (race.status === "강제마감") {
+            race.status = "자동(날짜기준)";
+            alert(`[${race.name}] 항목의 강제 마감이 해제되었습니다. (접수 재개)`);
+        } else {
+            race.status = "강제마감";
+            alert(`[${race.name}] 항목이 강제 접수마감 처리되었습니다. (대회일정 유지, 신청 불가)`);
+        }
+
+        refreshUI();
+
+        try {
+            const url = `${API_URL}?action=saveRace&raceId=${encodeURIComponent(race.id)}&itemType=${encodeURIComponent(race.itemType || 'race')}&raceName=${encodeURIComponent(race.name)}&location=${encodeURIComponent(race.location || '')}&date=${encodeURIComponent(race.date)}&deadline=${encodeURIComponent(race.deadline)}&courses=${encodeURIComponent(race.courses)}&status=${encodeURIComponent(race.status)}`;
+            fetch(url).then(() => fetchServerData(true));
+        } catch(e) {
+            console.error("강제마감 서버 저장 오류:", e);
+        }
     }
 
     function editRace(raceId) {
