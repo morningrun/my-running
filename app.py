@@ -1,3 +1,15 @@
+import streamlit as st
+import streamlit.components.v1 as components
+
+# 페이지 설정
+st.set_page_config(
+    page_title="복사골 통합 접수시스템",
+    page_icon="🏃‍♂️",
+    layout="centered"
+)
+
+# 전체 HTML/CSS/JS 코드를 컴포넌트로 렌더링
+html_code = """
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -1906,3 +1918,6 @@
 
 </body>
 </html>
+"""
+
+components.html(html_code, height=950, scrolling=True)
